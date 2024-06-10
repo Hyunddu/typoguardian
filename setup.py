@@ -10,12 +10,10 @@ setup(
         'certifi',
         'idna',
         'requests',
-        'sentence-transformers',
         'lxml',
         'tqdm',
         'pyxdameraulevenshtein',
         'Pillow',
-        'clavier @ git+https://github.com/MaxHalford/clavier',
         'pipdeptree',
         'numpy',
         'jarowinkler'
