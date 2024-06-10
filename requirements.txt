@@ -1,0 +1,12 @@
+requests~=2.32.3
+sentence-transformers
+lxml~=5.2.2
+tqdm~=4.66.4
+pyxdameraulevenshtein~=1.8.0
+Pillow~=10.3.0
+clavier @ git+https://github.com/MaxHalford/clavier
+clavier~=0.1.0
+setuptools~=68.2.0
+numpy~=1.26.4
+pipdeptree~=2.22.0
+jarowinkler~=2.0.1
