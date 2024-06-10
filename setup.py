@@ -6,6 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'cython',
+        'urllib3',
         'requests',
         'sentence-transformers',
         'lxml',
