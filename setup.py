@@ -7,6 +7,8 @@ setup(
     install_requires=[
         'cython',
         'urllib3',
+        'certifi',
+        'idna',
         'requests',
         'sentence-transformers',
         'lxml',
