@@ -42,13 +42,17 @@ def combine_scores():
         for typo, dld_score in dld_data[package]:
             combined_results[package][typo] = dld_score
             if dld_score < 0.75:
-                penalty = 0.3
+                penalty = -0.3
             else:
                 penalty = 0
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] -= penalty
+            if dld_score >= 0.83:
+                bonus = 0.2
             else:
-                combined_results[package][typo] = penalty
+                bonus = 0
+            if package in combined_results and typo in combined_results[package]:
+                combined_results[package][typo] += penalty + bonus
+            else:
+                combined_results[package][typo] = penalty + bonus
 
     for package in image_data:
         for typo, image_score in image_data[package]:
@@ -57,8 +61,14 @@ def combine_scores():
 
     for package in jaro_data:
         for typo, jaro_score in jaro_data[package]:
+            if jaro_score >= 0.9:
+                bonus = 0.3
+            elif jaro_score >= 0.85:
+                bonus = 0.2
+            else:
+                bonus = 0
             if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += jaro_score
+                combined_results[package][typo] += jaro_score + bonus
 
     for package in clavier_data:
         for typo, clavier_score in clavier_data[package]:
