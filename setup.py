@@ -5,13 +5,15 @@ setup(
     version='0.1',
     packages=find_packages(),
     install_requires=[
+        'cython',
+        'urllib3',
+        'certifi',
+        'idna',
         'requests',
-        'sentence-transformers',
         'lxml',
         'tqdm',
         'pyxdameraulevenshtein',
         'Pillow',
-        'clavier @ git+https://github.com/MaxHalford/clavier',
         'pipdeptree',
         'numpy',
         'jarowinkler'
