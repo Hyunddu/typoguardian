@@ -21,7 +21,6 @@ setup(
         'numpy',
         'jarowinkler',
         'logging',
-        'pygments'
     ],
     entry_points={
         'console_scripts': [
