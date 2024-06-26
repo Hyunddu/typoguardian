@@ -2,8 +2,11 @@ from myproject.dld import run_dld
 from myproject.img_numpy import run_img_numpy
 from myproject.clavier import run_clavier
 from myproject.jaro import run_jaro
+from myproject.mal_normal import run_mal_normal
+from myproject.mal_compare import run_mal_compare
 import argparse
 import json
+import os
 
 
 def combine_scores():
@@ -96,6 +99,7 @@ def main():
     parser.add_argument("--update", action="store_true", help="Update the PyPI package list")
     parser.add_argument("--threshold", type=float, default=0.7, help="Similarity threshold for detection")
     parser.add_argument("package_name", nargs="?", help="Package name (e.g., matplotlib)")
+    parser.add_argument("--compare", action="store_true", help="Run mal_compare")
     args = parser.parse_args()
 
     if args.update:
@@ -103,8 +107,16 @@ def main():
         print("PyPI package list updated. Exiting.")
         return
 
-    if not args.package_name:
+    if not args.package_name and not args.compare:
         print("Package name is required. Exiting.")
+        return
+
+    if args.compare:
+        if not os.path.exists('final_typos.json'):
+            print("final_typos.json not found. Exiting.")
+            return
+        run_mal_normal()
+        run_mal_compare()
         return
 
     run_dld(args.package_name, update=args.update, threshold=args.threshold)

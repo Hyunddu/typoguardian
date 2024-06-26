@@ -66,11 +66,12 @@ def process_package(package_args):
     try:
         matching_packages = []
         for comparison_package in comparison_packages:
-            distance = damerau_levenshtein_distance(package, comparison_package)
-            max_len = max(len(package), len(comparison_package))
-            similarity = 1 - (distance / max_len)
-            if similarity > threshold:
-                matching_packages.append((comparison_package, similarity))
+            if package != comparison_package:
+                distance = damerau_levenshtein_distance(package, comparison_package)
+                max_len = max(len(package), len(comparison_package))
+                similarity = 1 - (distance / max_len)
+                if similarity > threshold:
+                    matching_packages.append((comparison_package, similarity))
         return package, matching_packages
     except Exception as e:
         print(f"An error occurred while processing {package}: {str(e)}")
