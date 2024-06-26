@@ -1,14 +1,6 @@
 from setuptools import setup, find_packages
 import sys
 import subprocess
-
-# Check for Microsoft Visual C++ Build Tools
-try:
-    subprocess.check_call(['cl'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-except (OSError, subprocess.CalledProcessError):
-    print("Microsoft Visual C++ 14.0 or greater is required. Get it with 'Microsoft C++ Build Tools':")
-    print("https://visualstudio.microsoft.com/visual-cpp-build-tools/")
-    sys.exit(1)
     
 setup(
     name='myproject',
