@@ -15,6 +15,7 @@ setup(
         'lxml',
         'tqdm',
         'pyxdameraulevenshtein',
+        'clavier @ git+https://github.com/MaxHalford/clavier',
         'Pillow',
         'pipdeptree',
         'numpy',
