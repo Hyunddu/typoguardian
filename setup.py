@@ -1,7 +1,5 @@
 from setuptools import setup, find_packages
-import sys
-import subprocess
-    
+
 setup(
     name='myproject',
     version='0.1',
