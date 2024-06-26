@@ -4,6 +4,7 @@ colorama==0.4.6
 Cython==3.0.10
 idna==3.7
 jarowinkler==2.0.1
+logging==0.4.9.6
 lxml==5.2.2
 numpy==1.26.4
 packaging==24.1
