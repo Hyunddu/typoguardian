@@ -19,7 +19,8 @@ setup(
         'pipdeptree',
         'numpy',
         'jarowinkler',
-        'logging'
+        'logging',
+        'pygments'
     ],
     entry_points={
         'console_scripts': [
