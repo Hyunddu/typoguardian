@@ -20,17 +20,20 @@ myproject --update
 ```
 이 명령어는 PyPI에 등록된 최신 패키지 리스트를 다운로드합니다.
 
-### 타이포스쿼팅 의심 패키지 불러오기
+### 악성 패키지 검사
 ```bash
 myproject {패키지 이름}
 ```
-pypi에 등록된 패키지 중 입력한 패키지와 유사한 패키지 이름을 json파일로 저장합니다. 함께 설치되는 패키지도 포함됩니다.
+pypi에 등록된 패키지 중 입력한 패키지와 유사한 패키지 이름을 final_typos.json파일로 저장합니다. 함께 설치되는 패키지도 포함됩니다.
+yara오픈소스를 이용하여 악성패키지를 탐지합니다.
 
-### 정상 기능 제공 확인
+### 검사 진행 후 패키지파일 삭제 옵션
 ```bash
-myproject --compare
+myproject {패키지 이름} --clean
 ```
-설치된 패키지와 타이포스쿼팅 의심패키지 파일을 비교하여 기존 기능을 제공하는지 확인합니다.
+Removed directory: pypi_zip
+Removed directory: similar_packages
+Removed file: packages.zip
 
 ## json 파일
 - pypi 패키지 리스트 (output => pypi_packages.json)
@@ -40,3 +43,4 @@ myproject --compare
 - 키보드 레이아웃 점수 계산 (output => typos_clavier.json)
 - 타이포스쿼팅 의심 패키지 (output => final_typos.json)
 - 정상패키지 기능제공 확인 (output => comparison_results.json)
+- yara 악성코드 탐지 결과 (output => yara_scan_results.json)
