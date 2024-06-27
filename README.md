@@ -10,7 +10,7 @@ MyProject는 레벤슈타인 거리, 이미지 분석 점수 및 키보드 레�
 
 ## 설치 방법
 ```bash
-python -m pip install -r .\requirements.txt
+pip install -e .
 ```
 ## 사용 방법
 
