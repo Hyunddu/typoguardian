@@ -2,7 +2,6 @@ import os
 import tarfile
 import zipfile
 import json
-import logging
 
 
 def get_file_list_from_tar(archive_path):
@@ -10,20 +9,20 @@ def get_file_list_from_tar(archive_path):
         with tarfile.open(archive_path, 'r:*') as tar:
             return tar.getnames()
     except tarfile.ReadError:
-        logging.info(f"tarfile로 열 수 없습니다. zipfile로 시도합니다: {archive_path}")
+        print(f"tarfile로 열 수 없습니다. zipfile로 시도합니다: {archive_path}")
     except Exception as e:
-        logging.error(f"tarfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
+        print(f"tarfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
         return []
 
     try:
         with zipfile.ZipFile(archive_path, 'r') as zip_file:
             return zip_file.namelist()
     except zipfile.BadZipFile:
-        logging.warning(f"zipfile로도 열 수 없습니다: {archive_path}")
+        print(f"zipfile로도 열 수 없습니다: {archive_path}")
     except Exception as e:
-        logging.error(f"zipfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
+        print(f"zipfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
 
-    logging.warning(f"파일을 열 수 없습니다: {archive_path}")
+    print(f"파일을 열 수 없습니다: {archive_path}")
     return []
 
 

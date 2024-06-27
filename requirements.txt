@@ -5,7 +5,7 @@ Cython==3.0.10
 idna==3.7
 jarowinkler==2.0.1
 lxml==5.2.2
-numpy==1.26.4
+numpy==2.0.0
 packaging==24.1
 pillow==10.3.0
 pipdeptree==2.22.0
@@ -14,3 +14,4 @@ rapidfuzz==3.9.3
 requests==2.32.3
 tqdm==4.66.4
 urllib3==2.2.1
+yara-python==4.5.1

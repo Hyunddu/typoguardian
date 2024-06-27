@@ -4,9 +4,12 @@ from myproject.clavier import run_clavier
 from myproject.jaro import run_jaro
 from myproject.mal_normal import run_mal_normal
 from myproject.mal_compare import run_mal_compare
+from myproject.yara_scan import run_yara_scan
+from myproject.typos_result_download import run_typos_result_download
 import argparse
 import json
 import os
+import shutil
 
 
 def combine_scores():
@@ -94,12 +97,23 @@ def combine_scores():
     print("Combined results saved in final_typos.json")
 
 
+def clean_up():
+    paths_to_clean = ['pypi_zip', 'similar_packages', 'packages.zip']
+    for path in paths_to_clean:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+            print(f"Removed directory: {path}")
+        elif os.path.isfile(path):
+            os.remove(path)
+            print(f"Removed file: {path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Typosquatting Detection Tool")
     parser.add_argument("--update", action="store_true", help="Update the PyPI package list")
     parser.add_argument("--threshold", type=float, default=0.7, help="Similarity threshold for detection")
-    parser.add_argument("package_name", nargs="?", help="Package name (e.g., matplotlib)")
-    parser.add_argument("--compare", action="store_true", help="Run mal_compare")
+    parser.add_argument("--clean", action="store_true", help="Clean up downloaded files and folders")
+    parser.add_argument("package_name", nargs="?", help="Package name (e.g., torch)")
     args = parser.parse_args()
 
     if args.update:
@@ -107,16 +121,8 @@ def main():
         print("PyPI package list updated. Exiting.")
         return
 
-    if not args.package_name and not args.compare:
+    if not args.package_name:
         print("Package name is required. Exiting.")
-        return
-
-    if args.compare:
-        if not os.path.exists('final_typos.json'):
-            print("final_typos.json not found. Exiting.")
-            return
-        run_mal_normal()
-        run_mal_compare()
         return
 
     run_dld(args.package_name, update=args.update, threshold=args.threshold)
@@ -124,6 +130,13 @@ def main():
     run_clavier()
     run_jaro()
     combine_scores()
+    run_mal_normal()
+    run_mal_compare()
+    run_typos_result_download()
+    run_yara_scan()
+
+    if args.clean:
+        clean_up()
 
 
 if __name__ == "__main__":
