@@ -30,7 +30,7 @@ def extract_and_scan_zip(zip_path, rule):
                         try:
                             match = rule.match(data=file_content)
                             if match:
-                                print(f"Match found in file: {member.filename}")
+                                # print(f"Match found in file: {member.filename}")
                                 results['malicious'].append({
                                     'file_path': member.filename,
                                     'match': [str(m) for m in match]
@@ -54,17 +54,17 @@ def run_yara_scan():
     if rule:
         results = extract_and_scan_zip(zip_file, rule)
 
-        print("\nMalicious files detected:")
-        for entry in results['malicious']:
-            print(f"File: {entry['file_path']}, Match: {entry['match']}")
-
-        print("\nClean files:")
-        for file_path in results['clean']:
-            print(f"File: {file_path}")
-
-        print("\nFailed to scan files:")
-        for file_path in results['failed']:
-            print(f"File: {file_path}")
+        # print("\nMalicious files detected:")
+        # for entry in results['malicious']:
+        #     print(f"File: {entry['file_path']}, Match: {entry['match']}")
+        #
+        # print("\nClean files:")
+        # for file_path in results['clean']:
+        #     print(f"File: {file_path}")
+        #
+        # print("\nFailed to scan files:")
+        # for file_path in results['failed']:
+        #     print(f"File: {file_path}")
 
         print("\nSummary:")
         print(f"Total malicious files: {len(results['malicious'])}")

@@ -27,4 +27,3 @@ def run_jaro():
     with open("typos_jaro.json", "w") as file:
         json.dump(jaro_results, file, indent=4)
 
-    print("Jaro-Winkler results saved in typos_jaro.json")

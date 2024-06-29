@@ -8,21 +8,13 @@ def get_file_list_from_tar(archive_path):
     try:
         with tarfile.open(archive_path, 'r:*') as tar:
             return tar.getnames()
-    except tarfile.ReadError:
-        print(f"tarfile로 열 수 없습니다. zipfile로 시도합니다: {archive_path}")
-    except Exception as e:
-        print(f"tarfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
-        return []
-
+    except (tarfile.ReadError, Exception):
+        pass
     try:
         with zipfile.ZipFile(archive_path, 'r') as zip_file:
             return zip_file.namelist()
-    except zipfile.BadZipFile:
-        print(f"zipfile로도 열 수 없습니다: {archive_path}")
-    except Exception as e:
-        print(f"zipfile 처리 중 오류 발생: {archive_path}, 오류: {str(e)}")
-
-    print(f"파일을 열 수 없습니다: {archive_path}")
+    except (zipfile.BadZipFile, Exception):
+        pass
     return []
 
 
@@ -66,23 +58,15 @@ def run_mal_compare():
                                         if os.path.isdir(malicious_version_dir):
                                             for malicious_file in os.listdir(malicious_version_dir):
                                                 if malicious_file.endswith('.tar.gz'):
-                                                    malicious_tar_path = os.path.join(malicious_version_dir,
-                                                                                      malicious_file)
-                                                    common_files_count = compare_files(normal_filenames,
-                                                                                       malicious_tar_path)
-
+                                                    malicious_tar_path = os.path.join(malicious_version_dir, malicious_file)
+                                                    common_files_count = compare_files(normal_filenames, malicious_tar_path)
                                                     rate = common_files_count / normal_file_count
 
                                                     if rate > 0.4 and common_files_count >= 10:
                                                         if normal_package_name not in results:
-                                                            results[normal_package_name] = {
-                                                                "file_count": normal_file_count, "versions": {}}
-
-                                                        if normal_version not in results[normal_package_name][
-                                                            "versions"]:
-                                                            results[normal_package_name]["versions"][
-                                                                normal_version] = []
-
+                                                            results[normal_package_name] = {"file_count": normal_file_count, "versions": {}}
+                                                        if normal_version not in results[normal_package_name]["versions"]:
+                                                            results[normal_package_name]["versions"][normal_version] = []
                                                         results[normal_package_name]["versions"][normal_version].append(
                                                             {
                                                                 'malicious_package': malicious_package_dir,
@@ -101,7 +85,7 @@ def run_mal_compare():
     with open('comparison_results.json', 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
 
-    print("Results have been written to comparison_results.json")
+    print("\nSaved: comparison_results.json")
 
 
 if __name__ == "__main__":

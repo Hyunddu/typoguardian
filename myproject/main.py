@@ -12,6 +12,17 @@ import os
 import shutil
 
 
+def clean_existing_data():
+    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'yara_scan_results.json', 'pypi_zip', 'similar_packages', 'packages.zip']
+    for path in paths_to_clean:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+            print(f"Removed directory: {path}")
+        elif os.path.isfile(path):
+            os.remove(path)
+            print(f"Removed file: {path}")
+
+
 def combine_scores():
     try:
         with open('typos_DLD.json', 'r') as file:
@@ -94,18 +105,7 @@ def combine_scores():
     with open('final_typos.json', 'w') as file:
         json.dump(final_results, file, indent=4)
 
-    print("Combined results saved in final_typos.json")
-
-
-def clean_up():
-    paths_to_clean = ['pypi_zip', 'similar_packages', 'packages.zip']
-    for path in paths_to_clean:
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-            print(f"Removed directory: {path}")
-        elif os.path.isfile(path):
-            os.remove(path)
-            print(f"Removed file: {path}")
+    print("Saved: final_typos.json")
 
 
 def main():
@@ -125,6 +125,9 @@ def main():
         print("Package name is required. Exiting.")
         return
 
+    if args.clean:
+        clean_existing_data()
+
     run_dld(args.package_name, update=args.update, threshold=args.threshold)
     run_img_numpy()
     run_clavier()
@@ -134,9 +137,6 @@ def main():
     run_mal_compare()
     run_typos_result_download()
     run_yara_scan()
-
-    if args.clean:
-        clean_up()
 
 
 if __name__ == "__main__":

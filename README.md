@@ -27,13 +27,10 @@ myproject {패키지 이름}
 pypi에 등록된 패키지 중 입력한 패키지와 유사한 패키지 이름을 final_typos.json파일로 저장합니다. 함께 설치되는 패키지도 포함됩니다.
 yara오픈소스를 이용하여 악성패키지를 탐지합니다.
 
-### 검사 진행 후 패키지파일 삭제 옵션
+### 검사 진행 전 이전 파일 삭제 옵션(pypi_packages.json 제외)
 ```bash
 myproject {패키지 이름} --clean
 ```
-Removed directory: pypi_zip
-Removed directory: similar_packages
-Removed file: packages.zip
 
 ## json 파일
 - pypi 패키지 리스트 (output => pypi_packages.json)

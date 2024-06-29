@@ -135,4 +135,3 @@ def run_dld(package_name, update=False, threshold=0.7):
 
         if results:
             save_results(results)
-        print("Results saved in typos_DLD.json")

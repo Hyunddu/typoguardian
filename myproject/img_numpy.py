@@ -24,8 +24,6 @@ def run_img_numpy():
     with open('typos_image_numpy.json', 'w') as file:
         json.dump(results, file, indent=4)
 
-    print("Results saved to 'typos_image_numpy.json'")
-
 
 def text_to_binary_image(text):
     font = ImageFont.truetype("arial.ttf", 80)
