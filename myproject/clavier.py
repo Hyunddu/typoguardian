@@ -11,6 +11,8 @@ def run_clavier():
     keyboard = load_qwerty()
 
     def calculate_keyboard_distance(s1, s2):
+        s1 = s1.replace('_', '-')
+        s2 = s2.replace('_', '-')
         return sum(keyboard.char_distance(c1, c2) for c1, c2 in zip(s1, s2))
 
     for pkg, typos_list in data.items():

@@ -18,7 +18,10 @@ def get_github_release_url(github_url):
         return None
     owner, repo = match.groups()
     releases_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {
+        # 'Authorization': 'Github token',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     try:
         response = requests.get(releases_url, headers=headers)
         response.raise_for_status()
@@ -54,7 +57,7 @@ def download_package(package_name, version, save_path):
             file.write(response.content)
         return True
     except requests.exceptions.RequestException as e:
-        # print(f"Failed to download {package_name}=={version}: {str(e)}")
+        print(f"Failed to download {package_name}=={version}: {str(e)}")
         return False
 
 
@@ -68,6 +71,25 @@ def compress_to_zip(base_save_path, zip_path):
     print(f"Compressed {base_save_path} to {zip_path}")
 
 
+def get_package_version(package_name):
+    try:
+        version_url = f"https://pypi.org/pypi/{package_name}/json"
+        response = requests.get(version_url)
+        response.raise_for_status()
+        version_data = response.json()
+        return version_data['info']['version']
+    except requests.exceptions.RequestException:
+        print(f"Failed to fetch version for {package_name}")
+        return None
+
+
+def process_package(package_name, base_save_path):
+    version = get_package_version(package_name)
+    if version:
+        save_path = os.path.join(base_save_path, package_name, version, f"{package_name}-{version}.tar.gz")
+        download_package(package_name, version, save_path)
+
+
 def run_typos_result_download():
     json_file_path = 'final_typos.json'
     base_save_path = 'pypi_zip'
@@ -75,21 +97,13 @@ def run_typos_result_download():
 
     with open(json_file_path, 'r') as file:
         data = json.load(file)
-    for package_group in data.values():
+
+    for norm_pkg_name, package_group in data.items():
+        process_package(norm_pkg_name, base_save_path)
         for package_info in package_group:
-            package_name = package_info[0]
-            score = package_info[1]
+            package_name, score = package_info
             if score >= 3.0:
-                try:
-                    version_url = f"https://pypi.org/pypi/{package_name}/json"
-                    response = requests.get(version_url)
-                    response.raise_for_status()
-                    version_data = response.json()
-                    version = version_data['info']['version']
-                except requests.exceptions.RequestException:
-                    continue
-                save_path = os.path.join(base_save_path, package_name, version, f"{package_name}-{version}.tar.gz")
-                download_package(package_name, version, save_path)
+                process_package(package_name, base_save_path)
     compress_to_zip(base_save_path, zip_path)
 
 
