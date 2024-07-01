@@ -35,18 +35,24 @@ def get_github_url(package_info):
     return None
 
 
-def get_release_url(github_url):
+def get_github_release_url(github_url):
     match = re.search(r'github\.com/([^/]+)/([^/]+)', github_url)
     if not match:
         return None
     owner, repo = match.groups()
     releases_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    response = requests.get(releases_url, headers=headers)
-    response.raise_for_status()
-    release_info = response.json()
-    tag_name = release_info['tag_name']
-    return f"https://github.com/{owner}/{repo}/releases/download/{tag_name}/{repo}-{tag_name}.tar.gz"
+    headers = {
+        # 'Authorization': 'Github token',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    try:
+        response = requests.get(releases_url, headers=headers)
+        response.raise_for_status()
+        release_info = response.json()
+        tag_name = release_info['tag_name']
+        return f"https://github.com/{owner}/{repo}/archive/refs/tags/{tag_name}.tar.gz"
+    except requests.exceptions.RequestException:
+        return None
 
 
 def download_package(package_name, package_type='normal'):
@@ -57,7 +63,7 @@ def download_package(package_name, package_type='normal'):
         if tarball_url is None:
             github_url = get_github_url(package_info)
             if github_url:
-                tarball_url = get_release_url(github_url)
+                tarball_url = get_github_release_url(github_url)
         if tarball_url is None:
             print(f"{package_name}: 패키지 파일을 찾을 수 없습니다.")
             return
