@@ -135,7 +135,6 @@ def run_sbom_analysis():
     if failures:
         print("\n분석 실패한 파일 목록 및 원인:")
         for file, error in failures:
-        	return None
             print(f"파일명: {file}, 오류: {error}")
 
     print("총 분석 시간: {:.2f} 초".format(total_analysis_time))
