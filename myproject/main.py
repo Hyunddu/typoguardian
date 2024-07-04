@@ -14,7 +14,7 @@ import concurrent.futures
 
 
 def clean_existing_data():
-    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'yara_scan_results.json', 'pypi_zip', 'similar_packages', 'packages.zip']
+    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'dog_result.json', 'sbom_results.json', 'yara_scan_results.json', 'similar_packages', 'packages.zip']    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'dog_result.json', 'sbom_results.json', 'yara_scan_results.json', 'similar_packages', 'packages.zip']
     for path in paths_to_clean:
         if os.path.isdir(path):
             shutil.rmtree(path)
