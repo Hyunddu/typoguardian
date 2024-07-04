@@ -139,8 +139,7 @@ def main():
     run_yara_scan()
     run_sbom_analysis('packages.zip', 'packages')
     run_guarddog_analysis()
-    if args.clean:
-        clean_up()
+
 
 if __name__ == "__main__":
     main()
