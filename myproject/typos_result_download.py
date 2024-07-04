@@ -90,6 +90,19 @@ def process_package(package_name, base_save_path):
         download_package(package_name, version, save_path)
 
 
+def restructure_directories(base_save_path, save_dir):
+    for root, dirs, files in os.walk(base_save_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            package_name, version = os.path.basename(root), os.path.basename(os.path.dirname(root))
+            if 'normal' in root:
+                new_save_path = os.path.join(save_dir, package_name, 'normal', version, file)
+            else:
+                new_save_path = os.path.join(save_dir, 'malregistry', package_name, version, file)
+            os.makedirs(os.path.dirname(new_save_path), exist_ok=True)
+            os.rename(file_path, new_save_path)
+
+
 def run_typos_result_download():
     json_file_path = 'final_typos.json'
     base_save_path = 'pypi_zip'
@@ -105,6 +118,8 @@ def run_typos_result_download():
             if score >= 3.0:
                 process_package(package_name, base_save_path)
     compress_to_zip(base_save_path, zip_path)
+
+    restructure_directories(base_save_path, 'similar_packages')
 
 
 if __name__ == '__main__':

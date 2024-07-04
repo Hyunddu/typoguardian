@@ -2,10 +2,11 @@ from myproject.dld import run_dld
 from myproject.img_numpy import run_img_numpy
 from myproject.clavier import run_clavier
 from myproject.jaro import run_jaro
-from myproject.mal_normal import run_mal_normal
 from myproject.mal_compare import run_mal_compare
 from myproject.yara_scan import run_yara_scan
 from myproject.typos_result_download import run_typos_result_download
+from myproject.sbom_analysis import run_sbom_analysis
+from myproject.guarddog_analysis import run_guarddog_analysis
 import argparse
 import json
 import os
@@ -133,11 +134,13 @@ def main():
     run_clavier()
     run_jaro()
     combine_scores()
-    run_mal_normal()
-    run_mal_compare()
     run_typos_result_download()
+    run_mal_compare()
     run_yara_scan()
-
+    run_sbom_analysis('packages.zip', 'packages')
+    run_guarddog_analysis()
+    if args.clean:
+        clean_up()
 
 if __name__ == "__main__":
     main()

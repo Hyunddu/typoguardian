@@ -26,7 +26,7 @@ def run_img_numpy():
 
 
 def text_to_binary_image(text):
-    font = ImageFont.truetype("arial.ttf", 80)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)
     text_width = int(font.getlength(text))
     image = Image.new('1', (text_width, 100), color=1)
     from PIL import ImageDraw
