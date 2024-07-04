@@ -7,14 +7,14 @@ from myproject.yara_scan import run_yara_scan
 from myproject.typos_result_download import run_typos_result_download
 from myproject.sbom_analysis import run_sbom_analysis
 from myproject.guarddog_analysis import run_guarddog_analysis
-import argparse
 import json
 import os
 import shutil
+import concurrent.futures
 
 
 def clean_existing_data():
-    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'dog_result.json', 'sbom_results.json', 'yara_scan_results.json', 'similar_packages', 'packages.zip']
+    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'yara_scan_results.json', 'pypi_zip', 'similar_packages', 'packages.zip']
     for path in paths_to_clean:
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -113,9 +113,11 @@ def main():
     parser = argparse.ArgumentParser(description="Typosquatting Detection Tool")
     parser.add_argument("--update", action="store_true", help="Update the PyPI package list")
     parser.add_argument("--threshold", type=float, default=0.7, help="Similarity threshold for detection")
-    parser.add_argument("--clean", action="store_true", help="Clean up downloaded files and folders")
-    parser.add_argument("package_name", nargs="?", help="Package name (e.g., torch)")
+    parser.add_argument("--clean", action="store_true", help="Clean up downloaded files and folders after execution")
+    parser.add_argument("package_name", nargs="?", help="Package name (e.g., matplotlib)")
     args = parser.parse_args()
+
+    clean_existing_data()
 
     if args.update:
         run_dld(None, update=True)
@@ -126,19 +128,26 @@ def main():
         print("Package name is required. Exiting.")
         return
 
-    if args.clean:
-        clean_existing_data()
-
     run_dld(args.package_name, update=args.update, threshold=args.threshold)
-    run_img_numpy()
-    run_clavier()
-    run_jaro()
+
+    # Run Jaro, Clavier, and Img_Numpy in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_jaro = executor.submit(run_jaro)
+        future_clavier = executor.submit(run_clavier)
+        future_img_numpy = executor.submit(run_img_numpy)
+
+        concurrent.futures.wait([future_jaro, future_clavier, future_img_numpy], return_when=concurrent.futures.ALL_COMPLETED)
+
     combine_scores()
     run_typos_result_download()
-    run_mal_compare()
-    run_yara_scan()
-    run_sbom_analysis('packages.zip', 'packages')
-    run_guarddog_analysis()
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_sbom = executor.submit(run_sbom_analysis, 'packages.zip', 'packages')
+        future_mal_compare = executor.submit(run_mal_compare)
+        future_yara_scan = executor.submit(run_yara_scan)
+        future_guarddog = executor.submit(run_guarddog_analysis)
+
+        concurrent.futures.wait([future_sbom, future_mal_compare, future_yara_scan, future_guarddog], return_when=concurrent.futures.ALL_COMPLETED)
 
 
 if __name__ == "__main__":
