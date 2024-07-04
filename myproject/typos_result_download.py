@@ -3,6 +3,11 @@ import os
 import requests
 import zipfile
 import re
+import shutil
+
+SAVE_DIR = "similar_packages"
+PYPI_ZIP_DIR = "pypi_zip"
+SIMILAR_JSON_FILE = "final_typos.json"
 
 
 def get_github_url(package_info):
@@ -19,7 +24,7 @@ def get_github_release_url(github_url):
     owner, repo = match.groups()
     releases_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
     headers = {
-        # 'Authorization': 'Github token',
+        # 'Authorization': 'git token',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     try:
@@ -90,17 +95,38 @@ def process_package(package_name, base_save_path):
         download_package(package_name, version, save_path)
 
 
-def restructure_directories(base_save_path, save_dir):
-    for root, dirs, files in os.walk(base_save_path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            package_name, version = os.path.basename(root), os.path.basename(os.path.dirname(root))
-            if 'normal' in root:
-                new_save_path = os.path.join(save_dir, package_name, 'normal', version, file)
+def restructure_dir(package_name, package_type='normal'):
+    package_dir = os.path.join(PYPI_ZIP_DIR, package_name)
+    if not os.path.exists(package_dir):
+        return
+
+    versions = os.listdir(package_dir)
+    if not versions:
+        return
+
+    for version in versions:
+        source_path = os.path.join(package_dir, version)
+        if os.path.isdir(source_path):
+            if package_type == 'normal':
+                target_path = os.path.join(SAVE_DIR, package_name, 'normal', version)
             else:
-                new_save_path = os.path.join(save_dir, 'malregistry', package_name, version, file)
-            os.makedirs(os.path.dirname(new_save_path), exist_ok=True)
-            os.rename(file_path, new_save_path)
+                target_path = os.path.join(SAVE_DIR, package_type, 'malregistry', package_name, version)
+
+            os.makedirs(target_path, exist_ok=True)
+
+            for item in os.listdir(source_path):
+                s = os.path.join(source_path, item)
+                d = os.path.join(target_path, item)
+                shutil.move(s, d)
+
+            # 원본 디렉토리가 비었으면 삭제
+            if not os.listdir(source_path):
+                os.rmdir(source_path)
+
+
+def load_similar_packages(json_file):
+    with open(json_file, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 
 def run_typos_result_download():
@@ -119,7 +145,13 @@ def run_typos_result_download():
                 process_package(package_name, base_save_path)
     compress_to_zip(base_save_path, zip_path)
 
-    restructure_directories(base_save_path, 'similar_packages')
+    similar_packages = load_similar_packages(SIMILAR_JSON_FILE)
+    for norm_pkg_name, mal_pkg_list in similar_packages.items():
+        restructure_dir(norm_pkg_name)
+        for mal_pkg in mal_pkg_list:
+            mal_pkg_name, score = mal_pkg
+            if score >= 3.0:
+                restructure_dir(mal_pkg_name, package_type=norm_pkg_name)
 
 
 if __name__ == '__main__':
