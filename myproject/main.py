@@ -143,7 +143,7 @@ def main():
     run_typos_result_download()
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_sbom = executor.submit(run_sbom_analysis, 'packages.zip', 'packages')
+        future_sbom = executor.submit(run_sbom_analysis)
         future_mal_compare = executor.submit(run_mal_compare)
         future_yara_scan = executor.submit(run_yara_scan)
         future_guarddog = executor.submit(run_guarddog_analysis)
