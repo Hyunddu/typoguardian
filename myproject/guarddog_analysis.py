@@ -61,7 +61,7 @@ def process_zip_file(zip_file_path, output_file):
                              for file in files if file.endswith('.tar.gz')]
             with ThreadPoolExecutor() as executor:
                 futures = {executor.submit(process_package, package_file): package_file for package_file in package_files}
-                for future in tqdm(as_completed(futures), total=len(futures), desc="Analyzing packages"):
+                for future in tqdm(as_completed(futures), total=len(futures), desc="Analyzing Guarddog"):
                     result, is_malicious = future.result()
                     if result:
                         all_packages.append(result)
@@ -77,7 +77,7 @@ def process_zip_file(zip_file_path, output_file):
     }
     with open(output_file, 'w') as f:
         json.dump(final_result, f, indent=2)
-    print(f"Saved {output_file}")
+    #print(f"Saved {output_file}")
 
 def run_guarddog_analysis():
     process_zip_file('packages.zip', 'dog_result.json')

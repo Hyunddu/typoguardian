@@ -85,7 +85,7 @@ def run_mal_compare():
     with open('comparison_results.json', 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
 
-    print("\nSaved: comparison_results.json")
+    #print("\nSaved: comparison_results.json")
 
 
 if __name__ == "__main__":

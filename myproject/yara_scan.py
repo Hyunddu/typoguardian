@@ -7,7 +7,7 @@ def compile_yara_rule(rule_file):
     try:
         with open(rule_file, 'r', encoding='utf-8') as f:
             rule = yara.compile(source=f.read())
-        print(f"Compiled rule from file: {rule_file}")
+        #print(f"Compiled rule from file: {rule_file}")
         return rule
     except yara.SyntaxError as e:
         print(f"Syntax error compiling {rule_file}: {e}")
@@ -19,7 +19,7 @@ def compile_yara_rule(rule_file):
 
 
 def extract_and_scan_zip(zip_path, rule):
-    print(f"Extracting and scanning zip file: {zip_path}")
+    #print(f"Extracting and scanning zip file: {zip_path}")
     results = {'malicious': [], 'clean': [], 'failed': []}
     try:
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -53,9 +53,9 @@ def run_yara_scan():
     rule = compile_yara_rule(rule_file)
     if rule:
         results = extract_and_scan_zip(zip_file, rule)
-        print("\nSummary:")
-        print(f"Total malicious files: {len(results['malicious'])}")
-        print(f"Total clean files: {len(results['clean'])}")
+        #print("\nSummary:")
+        #print(f"Total malicious files: {len(results['malicious'])}")
+        #print(f"Total clean files: {len(results['clean'])}")
 
         with open('yara_scan_results.json', 'w') as json_file:
             json.dump(results, json_file, indent=4)

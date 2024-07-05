@@ -1,10 +1,10 @@
 import os
 import subprocess
-import sys
 import time
 import zipfile
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 
 def run_sbom_analysis():
     uploaded_zip_path = 'packages.zip'
@@ -30,10 +30,9 @@ def run_sbom_analysis():
             try:
                 result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True)
                 return result
-            except subprocess.CalledProcessError as e:
-                print(f"명령 실행 실패: {e.stderr}, 재시도 {i+1}/{retries}")
+            except subprocess.CalledProcessError:
                 time.sleep(delay)
-        raise e
+        raise
 
     def analyze_file(file_path):
         result = {}
@@ -41,7 +40,9 @@ def run_sbom_analysis():
             start_time = time.time()
             syft_output_file = file_path + "-sbom.json"
             syft_command = f"syft {file_path} -o cyclonedx-json > {syft_output_file}"
-            subprocess.run(syft_command, shell=True, check=True)
+            # Suppress output by redirecting to /dev/null
+            with open(os.devnull, 'w') as devnull:
+                subprocess.run(syft_command, shell=True, stdout=devnull, stderr=devnull, check=True)
 
             with open(syft_output_file, 'r') as f:
                 sbom_data = json.load(f)
@@ -81,7 +82,9 @@ def run_sbom_analysis():
             try:
                 bomber_output_file = file_path + "-bomber-output.json"
                 scan_command = f"{bomber_path} scan --output=json {formatted_sbom_file} > {bomber_output_file}"
-                subprocess.run(scan_command, shell=True, check=True)
+                # Suppress output by redirecting to /dev/null
+                with open(os.devnull, 'w') as devnull:
+                    subprocess.run(scan_command, shell=True, stdout=devnull, stderr=devnull, check=True)
 
                 with open(bomber_output_file, 'r') as f:
                     bomber_result = json.load(f)
@@ -109,10 +112,10 @@ def run_sbom_analysis():
             return None, str(e)
 
     with ThreadPoolExecutor() as executor:
-        future_to_file = {executor.submit(analyze_file, os.path.join(root, file)): file for root, dirs, files in os.walk(package_path) for file in files if file.endswith(".tar.gz")}
+        futures = {executor.submit(analyze_file, os.path.join(root, file)): file for root, dirs, files in os.walk(package_path) for file in files if file.endswith(".tar.gz")}
         
-        for future in as_completed(future_to_file):
-            file = future_to_file[future]
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Analyzing SBOM"):
+            file = futures[future]
             try:
                 res, is_malicious = future.result()
                 if res:
@@ -129,16 +132,6 @@ def run_sbom_analysis():
     total_end_time = time.time()
     total_analysis_time = total_end_time - total_start_time
 
-    print("총 정상 패키지 개수: ", normal_count)
-    print("총 악성 패키지 개수: ", malicious_count)
-
-    if failures:
-        print("\n분석 실패한 파일 목록 및 원인:")
-        for file, error in failures:
-            print(f"파일명: {file}, 오류: {error}")
-
-    print("총 분석 시간: {:.2f} 초".format(total_analysis_time))
-
     output = {
         "총 정상 패키지 개수": normal_count,
         "총 악성 패키지 개수": malicious_count,
@@ -148,10 +141,12 @@ def run_sbom_analysis():
     }
 
     output_json = json.dumps(output, ensure_ascii=False, indent=4)
-    #print("\nJSON 결과:\n", output_json)
-
+    
     with open('sbom_results.json', 'w', encoding='utf-8') as f:
         f.write(output_json)
 
+    #print("Saved sbom_results.json")
+
 if __name__ == '__main__':
-	run_sbom_analysis()
+    run_sbom_analysis()
+

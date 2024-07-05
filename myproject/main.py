@@ -15,7 +15,7 @@ import concurrent.futures
 
 
 def clean_existing_data():
-    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'dog_result.json', 'sbom_results.json', 'yara_scan_results.json', 'similar_packages', 'packages.zip']
+    paths_to_clean = ['final_typos.json', 'typos_DLD.json', 'typos_image_numpy.json', 'typos_clavier.json', 'typos_jaro.json', 'comparison_results.json', 'dog_result.json', 'sbom_results.json', 'yara_scan_results.json', 'similar_packages', 'packages', 'packages.zip']
     for path in paths_to_clean:
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -118,8 +118,10 @@ def main():
     parser.add_argument("package_name", nargs="?", help="Package name (e.g., matplotlib)")
     args = parser.parse_args()
 
-    clean_existing_data()
 
+    if args.clean:
+        clean_existing_data()
+        
     if args.update:
         run_dld(None, update=True)
         print("PyPI package list updated. Exiting.")
@@ -131,7 +133,6 @@ def main():
 
     run_dld(args.package_name, update=args.update, threshold=args.threshold)
 
-    # Run Jaro, Clavier, and Img_Numpy in parallel
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_jaro = executor.submit(run_jaro)
         future_clavier = executor.submit(run_clavier)
