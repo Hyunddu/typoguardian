@@ -152,7 +152,8 @@ def main():
         future_guarddog = executor.submit(run_guarddog_analysis)
 
         concurrent.futures.wait([future_sbom, future_mal_compare, future_yara_scan, future_guarddog], return_when=concurrent.futures.ALL_COMPLETED)
-    run_output()
+
+    run_output()    
 
 if __name__ == "__main__":
     main()

@@ -1,21 +1,6 @@
 import json
 import re
 
-with open('final_typos.json', 'r') as f:
-    final_typos = json.load(f)
-
-with open('dog_result.json', 'r') as f:
-    dog_result = json.load(f)
-
-with open('yara_scan_results.json', 'r') as f:
-    yara_scan_result = json.load(f)
-
-with open('comparison_results.json', 'r') as f:
-    comparison_result = json.load(f)
-
-with open('sbom_results.json', 'r', encoding='utf-8') as file:
-    sbom_result = json.load(file)
-
 
 def exact_package_match(typo_name, string):
     pattern = rf"^{re.escape(typo_name)}(?:-\d|\.|$)"
@@ -88,6 +73,21 @@ def get_result_description(typo_name):
 
 
 def run_output():
+    
+    with open('final_typos.json', 'r') as f:
+        final_typos = json.load(f)
+    
+    with open('dog_result.json', 'r') as f:
+        dog_result = json.load(f)
+    
+    with open('yara_scan_results.json', 'r') as f:
+        yara_scan_result = json.load(f)
+    
+    with open('comparison_results.json', 'r') as f:
+        comparison_result = json.load(f)
+    
+    with open('sbom_results.json', 'r', encoding='utf-8') as file:
+        sbom_result = json.load(file)
     typo_result = []
     for package_name, typos in final_typos.items():
         for typo in typos:
