@@ -7,6 +7,8 @@ from myproject.yara_scan import run_yara_scan
 from myproject.typos_result_download import run_typos_result_download
 from myproject.sbom_analysis import run_sbom_analysis
 from myproject.guarddog_analysis import run_guarddog_analysis
+from myproject.output import run_output
+
 import json
 import argparse
 import os
@@ -150,7 +152,7 @@ def main():
         future_guarddog = executor.submit(run_guarddog_analysis)
 
         concurrent.futures.wait([future_sbom, future_mal_compare, future_yara_scan, future_guarddog], return_when=concurrent.futures.ALL_COMPLETED)
-
+    run_output()
 
 if __name__ == "__main__":
     main()
