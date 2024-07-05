@@ -1,13 +1,12 @@
 import json
 import re
 
-
 def exact_package_match(typo_name, string):
     pattern = rf"^{re.escape(typo_name)}(?:-\d|\.|$)"
     return re.search(pattern, string) is not None
+    
 
-
-def calculate_score(package_name, typo_name, typo_score):
+def calculate_score(package_name, typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result):
     score = typo_score
     score_breakdown = [f"typos: {typo_score:.2f}"]
 
@@ -23,6 +22,7 @@ def calculate_score(package_name, typo_name, typo_score):
     sbom_detected = any(exact_package_match(typo_name, item['파일명'])
                         and '악성 이유' in item
                         for item in sbom_result['성공한 파일들'])
+
 
     if dog_detected:
         score += 3
@@ -60,12 +60,12 @@ def get_danger_level(score):
         return "INFO"
 
 
-def get_result_description(typo_name):
+def get_result_description(typo_name, dog_result):
     result = []
 
     # DOG 결과 추가
     for package in dog_result['packages']:
-        if package['package'].startswith(typo_name):
+        if exact_package_match(typo_name, package['package']):
             for issue in package['issues']:
                 result.append(f"위치: {issue['location']}, 코드: {issue['code']}, 메시지: {issue['message']}")
 
@@ -93,9 +93,9 @@ def run_output():
         for typo in typos:
             typo_name, typo_score = typo
             if typo_score >= 3.0:
-                score, score_breakdown = calculate_score(package_name, typo_name, typo_score)
+                score, score_breakdown = calculate_score(package_name, typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result)
                 danger = get_danger_level(score)
-                result = get_result_description(typo_name)
+                result = get_result_description(typo_name, dog_result)
                 typo_result.append({
                     "name": typo_name,
                     "score": score,
@@ -103,6 +103,7 @@ def run_output():
                     "danger": danger,
                     "result": f"{package_name}의 타이포스쿼팅의심됩니다. 위험도: {score:.2f}점 ({score_breakdown}). {result}"
                 })
+
     typo_result.sort(key=lambda x: x['score'], reverse=True)
 
     final_result = {
