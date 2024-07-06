@@ -34,7 +34,9 @@ setup(
         'numpy',
         'jarowinkler',
         'yara-python',
-        'cyclonedx-python-lib'
+        'cyclonedx-python-lib',
+        'setuptools',
+        'wheel'
     ],
     entry_points={
         'console_scripts': [

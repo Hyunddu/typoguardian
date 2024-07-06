@@ -2,6 +2,7 @@ import os
 import json
 import zipfile
 import subprocess
+import re
 from tempfile import TemporaryDirectory
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -25,6 +26,13 @@ def is_valid_tar_gz(file_path):
     except IOError:
         return False
 
+def extract_package_info(filename):
+    pattern = r'^(.*?)-(\d+(?:\.\d+)*(?:[a-z]+\d+)?(?:\.post\d+)?(?:\.dev\d+)?)\.tar\.gz$'
+    match = re.match(pattern, filename)
+    if match:
+        return match.group(1), match.group(2)
+    return filename.replace('.tar.gz', ''), ''
+
 def process_package(package_file):
     if not is_valid_tar_gz(package_file):
         return None, False
@@ -34,16 +42,18 @@ def process_package(package_file):
     if analysis_result is None:
         return None, False
     
-    package_name = os.path.basename(package_file)
+    filename = os.path.basename(package_file)
+    package_name, version = extract_package_info(filename)
     is_malicious = analysis_result['issues'] > 0
     package_info = {
-        "package": package_name,
+        "package": filename,
         "issues": []
     }
     
     for issue_type, issues in analysis_result['results'].items():
         for issue in issues:
             package_info["issues"].append({
+                "package": package_name,
                 "location": issue.get("location", ""),
                 "code": issue.get("code", ""),
                 "message": issue.get("message", "")
