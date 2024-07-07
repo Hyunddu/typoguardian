@@ -60,7 +60,7 @@ def get_danger_level(score):
 
 
 def get_sbom_malicious_ids(typo_name, sbom_result, max_ids=10):
-    ids = set()  # 중복 제거를 위해 set 사용
+    ids = set()
     for item in sbom_result['성공한 파일들']:
         if exact_package_match(typo_name, item['파일명']) and '악성 이유' in item:
             for reason in item['악성 이유']:
