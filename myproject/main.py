@@ -1,6 +1,6 @@
 from myproject.dld import run_dld
 from myproject.img_numpy import run_img_numpy
-from myproject.clavier import run_clavier
+from myproject.clavier_score import run_clavier
 from myproject.jaro import run_jaro
 from myproject.mal_compare import run_mal_compare
 from myproject.yara_scan import run_yara_scan
