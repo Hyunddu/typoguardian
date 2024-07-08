@@ -1,10 +1,16 @@
 import json
 from PIL import Image, ImageFont
 import numpy as np
+import os
+
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+input_file = os.path.join(BASE_DIR, 'typos_DLD.json')
+output_file = os.path.join(BASE_DIR, 'typos_image_numpy.json')
 
 
 def run_img_numpy():
-    with open('typos_DLD.json', 'r') as file:
+    with open(input_file, 'r') as file:
         data = json.load(file)
 
     results = {}
@@ -21,7 +27,7 @@ def run_img_numpy():
 
         results[package].sort(key=lambda x: x[1], reverse=True)
 
-    with open('typos_image_numpy.json', 'w') as file:
+    with open(output_file, 'w') as file:
         json.dump(results, file, indent=4)
 
 
@@ -50,3 +56,5 @@ def calculate_similarity(img1, img2):
     similarity = np.sum(np.logical_and(padded_img1,  padded_img2)) / np.sum(np.logical_or(padded_img1, padded_img2))
 
     return similarity
+
+

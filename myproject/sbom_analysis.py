@@ -6,15 +6,20 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+input_file = os.path.join(BASE_DIR, 'packages.zip')
+output_file = os.path.join(BASE_DIR, 'sbom_results.json')
+extract_path = os.path.join(BASE_DIR, 'packages')
+bomber_path = '/usr/local/bin/bomber'
+
 def run_sbom_analysis():
-    uploaded_zip_path = 'packages.zip'
-    extract_path = 'packages'
-    bomber_path = '/usr/local/bin/bomber'
+
     
-    if not zipfile.is_zipfile(uploaded_zip_path):
+    if not zipfile.is_zipfile(input_file):
         raise ValueError("업로드된 파일이 zip 형식이 아닙니다.")
 
-    with zipfile.ZipFile(uploaded_zip_path, 'r') as zip_ref:
+    with zipfile.ZipFile(input_file, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
 
     package_path = os.path.abspath(extract_path)
@@ -40,7 +45,6 @@ def run_sbom_analysis():
             start_time = time.time()
             syft_output_file = file_path + "-sbom.json"
             syft_command = f"syft {file_path} -o cyclonedx-json > {syft_output_file}"
-            # Suppress output by redirecting to /dev/null
             with open(os.devnull, 'w') as devnull:
                 subprocess.run(syft_command, shell=True, stdout=devnull, stderr=devnull, check=True)
 
@@ -142,11 +146,12 @@ def run_sbom_analysis():
 
     output_json = json.dumps(output, ensure_ascii=False, indent=4)
     
-    with open('sbom_results.json', 'w', encoding='utf-8') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         f.write(output_json)
-
     #print("Saved sbom_results.json")
 
 if __name__ == '__main__':
     run_sbom_analysis()
+
+
 

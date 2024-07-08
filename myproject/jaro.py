@@ -1,6 +1,11 @@
 import json
+import os
 import jarowinkler
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+input_file = os.path.join(BASE_DIR, 'typos_DLD.json')
+output_file = os.path.join(BASE_DIR, 'typos_jaro.json')
 
 def calculate_jaro_winkler_similarity(results):
     jaro_results = {}
@@ -16,7 +21,7 @@ def calculate_jaro_winkler_similarity(results):
 
 def run_jaro():
     try:
-        with open("typos_DLD.json", "r") as file:
+        with open(input_file, "r") as file:
             results = json.load(file)
     except FileNotFoundError:
         print("typos_DLD.json not found.")
@@ -24,6 +29,8 @@ def run_jaro():
 
     jaro_results = calculate_jaro_winkler_similarity(results)
 
-    with open("typos_jaro.json", "w") as file:
+    with open(output_file, "w") as file:
         json.dump(jaro_results, file, indent=4)
+
+
 
