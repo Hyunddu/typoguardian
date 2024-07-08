@@ -41,3 +41,6 @@ myproject {패키지 이름} --clean
 - 타이포스쿼팅 의심 패키지 (output => final_typos.json)
 - 정상패키지 기능제공 확인 (output => comparison_results.json)
 - yara 악성코드 탐지 결과 (output => yara_scan_results.json)
+- sboom 취약점 탐지 결과 (output => sbom_results.json)
+- gaurddog 악성코드 탐지결과 (output => dog_result.json)
+- 악성 score 결과 (output => results.json)

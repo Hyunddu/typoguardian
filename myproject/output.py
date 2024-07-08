@@ -88,10 +88,44 @@ def get_dog_results(typo_name, dog_result, max_issues=3):
         if key not in seen:
             seen.add(key)
             unique_issues.append(issue)
+<<<<<<< HEAD
+
+    return unique_issues[:max_issues]
+=======
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb
 
     return unique_issues[:max_issues]
 
 
+def is_in_comparison_results(typo_name, comparison_result):
+    for package_info in comparison_result.values():
+        for version_list in package_info.get('versions', {}).values():
+            for version_info in version_list:
+                if typo_name == version_info.get('malicious_package', ''):
+                    return True
+    return False
+
+def get_result_description(typo_name, dog_result, sbom_result, comparison_result):
+    result = {"dog_results": [], "sbom_ids": [], "comparison_result": None}
+
+    dog_issues = get_dog_results(typo_name, dog_result)
+    if dog_issues:
+        result["dog_results"] = dog_issues
+        if len(dog_issues) == 3:
+            result["dog_results"].append({"message": "..."})
+
+    sbom_ids = get_sbom_malicious_ids(typo_name, sbom_result)
+    if sbom_ids:
+        result["sbom_ids"] = sbom_ids
+        if len(sbom_ids) == 10:
+            result["sbom_ids"].append("...")
+
+    if is_in_comparison_results(typo_name, comparison_result):
+        result["comparison_result"] = "정상 패키지와 동일한 기능 제공"
+
+    return result
+
+<<<<<<< HEAD
 def is_in_comparison_results(typo_name, comparison_result):
     for package_info in comparison_result.values():
         for version_list in package_info.get('versions', {}).values():
@@ -130,6 +164,22 @@ def run_output(typoschecker):
     with open(os.path.join(BASE_DIR, 'comparison_results.json'), 'r') as f:
         comparison_result = json.load(f)
     with open(os.path.join(BASE_DIR, 'sbom_results.json'), 'r', encoding='utf-8') as file:
+=======
+def run_output():
+    with open('final_typos.json', 'r') as f:
+        final_typos = json.load(f)
+
+    with open('dog_result.json', 'r') as f:
+        dog_result = json.load(f)
+
+    with open('yara_scan_results.json', 'r') as f:
+        yara_scan_result = json.load(f)
+
+    with open('comparison_results.json', 'r') as f:
+        comparison_result = json.load(f)
+
+    with open('sbom_results.json', 'r', encoding='utf-8') as file:
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb
         sbom_result = json.load(file)
     typo_result = []
     for package_name, typos in final_typos.items():
@@ -142,12 +192,23 @@ def run_output(typoschecker):
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
                 if result["comparison_result"]:
                     result_message += f" {result['comparison_result']}."
+<<<<<<< HEAD
                 combined_result = f"result: {result_message}, dog_results: {result.get('dog_results', [])}, sbom_ids: {result.get('sbom_ids', [])}"
+=======
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb
                 typo_result.append({
                     "name": typo_name,
                     "score": score,
                     "danger": danger,
+<<<<<<< HEAD
                     "result": combined_result 
+=======
+                    "result": {
+                        "message": result_message,
+                        "dog_results": result.get("dog_results", []),
+                        "sbom_ids": result.get("sbom_ids", []),
+                    }
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb
                 })
     typo_result.sort(key=lambda x: x['score'], reverse=True)
 
@@ -156,7 +217,16 @@ def run_output(typoschecker):
         "recommand": f"pip install {typoschecker}"
     }
 
+<<<<<<< HEAD
     # with open('/home/ubuntu/whs/util/results.json', 'w', encoding='utf-8') as json_file:
     #     json.dump(final_result, json_file, ensure_ascii=False)
     json_str = json.dumps(final_result, ensure_ascii=False)
     print(json_str)
+=======
+    with open('results.json', 'w', encoding='utf-8') as json_file:
+        json.dump(final_result, json_file, ensure_ascii=False, indent=4)
+
+
+if __name__ == '__main__':
+    run_output()
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb

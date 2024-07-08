@@ -8,4 +8,7 @@ from .typos_result_download import run_typos_result_download
 from .sbom_analysis import run_sbom_analysis
 from .guarddog_analysis import run_guarddog_analysis
 from .output import run_output
+<<<<<<< HEAD
 from .typos_checker import run_typos_check
+=======
+>>>>>>> 887e9681ddaa88d7ed2d80bb7a1d6a12991883fb
