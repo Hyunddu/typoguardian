@@ -1,6 +1,7 @@
 #pip install requests sentence-transformers lxml tqdm pyxdameraulevenshtein pipdeptree
 import subprocess
 import json
+import os
 import re
 import sys
 import requests
@@ -12,6 +13,11 @@ import warnings
 from pyxdameraulevenshtein import damerau_levenshtein_distance
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
+json_file_path = os.path.join(BASE_DIR, 'pypi_packages.json')
 
 URL_PYPI_SIMPLE = "https://pypi.org/simple/"
 
@@ -38,7 +44,7 @@ def update_pypi_packages():
         if response.status_code == 200:
             tree = html.fromstring(response.content)
             package_names = [name.lower() for name in tree.xpath('//a/text()')]
-            with open("pypi_packages.json", 'w') as file:
+            with open(json_file_path, 'w') as file:
                 json.dump(package_names, file)
             print("Data updated in pypi_packages.json")
         else:
@@ -49,7 +55,7 @@ def update_pypi_packages():
 
 def load_pypi_packages():
     try:
-        with open("pypi_packages.json") as file:
+        with open(json_file_path, 'r') as file:
             return json.load(file)
     except FileNotFoundError:
         print("PyPI package names file not found. Please run the script with --update flag to download the file.")
@@ -78,8 +84,8 @@ def process_package(package_args):
     return None
 
 
-def save_results(results, filename="typos_DLD.json"):
-    with open(filename, 'w') as file:
+def save_results(results):
+    with open(output_file, 'w') as file:
         json.dump(results, file, indent=4)
 
 
@@ -135,3 +141,5 @@ def run_dld(package_name, update=False, threshold=0.7):
 
         if results:
             save_results(results)
+
+

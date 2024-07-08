@@ -1,10 +1,12 @@
-#pip install argparse pyxdameraulevenshtein pyfiglet requests
-import argparse
+import os
 from pyxdameraulevenshtein import damerau_levenshtein_distance
 import re
 import requests
 
 MAX_LEVENSHTEIN_DISTANCE = 2
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+output_file = os.path.join(BASE_DIR, 'pypi_popular_packages.txt')
 
 DICTIONARY_PREFIX = [
     'python-', 'python_', 'python.', 'python3-', 'python3_', 'python3.', 'python2-', 'python2_', 'python2.',
@@ -158,7 +160,7 @@ def update_popular_packages():
         response = requests.get(URL_TOP_5000_PACKAGES)
         data = response.json()
 
-        with open("pypi_popular_packages.txt", 'w') as file:
+        with open(output_file, 'w') as file:
             for entry in data['rows']:
                 library_name = entry['project']
                 file.write(library_name + '\n')
@@ -167,41 +169,28 @@ def update_popular_packages():
         print("An error occurred:", str(e))
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Typosquatting detection tool for Python (PyPi) packages.")
-    parser.add_argument("--update", action="store_true", help="Update the popular package list before checking")
-    args = parser.parse_args()
+def run_typos_check(pck_input):
 
     try:
-        if args.update:
+        if not os.path.exists(os.path.join(BASE_DIR,"pypi_popular_packages.txt")):
             update_popular_packages()
 
-        popular_packages = load_packages("pypi_popular_packages.txt")
+        package = preprocess_package(pck_input)
+        popular_packages = load_packages(os.path.join(BASE_DIR,"pypi_popular_packages.txt"))
+        if not check_in_popular_packages(package, popular_packages):
+            first_check = levenshtein_check(package, popular_packages)
+            second_check = prefix_suffix_check(package, popular_packages)
+            third_check = prefix_suffix_and_levenshtein_check(package, popular_packages)
+            fourth_check = substitutions_check(package, popular_packages, DICTIONARY_SUBSTITUTIONS)
+            fifth_check = permutation_check(package, popular_packages)
 
-        while True:
-            package = input("Enter a package name (or 'quit' to exit): ").strip().lower()
-            if package == 'quit':
-                break
-
-            package = preprocess_package(package)
-            if not check_in_popular_packages(package, popular_packages):
-                first_check = levenshtein_check(package, popular_packages)
-                second_check = prefix_suffix_check(package, popular_packages)
-                third_check = prefix_suffix_and_levenshtein_check(package, popular_packages)
-                fourth_check = substitutions_check(package, popular_packages, DICTIONARY_SUBSTITUTIONS)
-                fifth_check = permutation_check(package, popular_packages)
-
-                if first_check or second_check or third_check or fourth_check or fifth_check:
-                    correct_package = first_check or second_check or third_check or fourth_check or fifth_check
-                    print(f"The package '{package}' may be affected by Typosquatting.")
-                    print(f"Maybe you meant the package '{correct_package}'?")
-                else:
-                    print(f"No similar popular package found for '{package}'.")
+            if first_check or second_check or third_check or fourth_check or fifth_check:
+                correct_package = first_check or second_check or third_check or fourth_check or fifth_check
+                return correct_package
             else:
-                print(f"'{package}' is a valid popular package.")
+                return pkg_input 
+        else:
+            return package
     except Exception as e:
         print(f"Error: {e}")
 
-
-if __name__ == '__main__':
-    main()

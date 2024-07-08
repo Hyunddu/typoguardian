@@ -1,7 +1,14 @@
 import yara
 import zipfile
 import json
+import os
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+
+yara_rule = os.path.join(BASE_DIR, 'yara_rules/yaramodel1.yara')
+input_file = os.path.join(BASE_DIR, 'packages.zip')
+output_file = os.path.join(BASE_DIR, 'yara_scan_results.json')
 
 def compile_yara_rule(rule_file):
     try:
@@ -47,17 +54,11 @@ def extract_and_scan_zip(zip_path, rule):
 
 
 def run_yara_scan():
-    rule_file = 'yara_rules/yaramodel1.yara'
-    zip_file = 'packages.zip'
-
-    rule = compile_yara_rule(rule_file)
+    rule = compile_yara_rule(yara_rule)
     if rule:
-        results = extract_and_scan_zip(zip_file, rule)
-        #print("\nSummary:")
-        #print(f"Total malicious files: {len(results['malicious'])}")
-        #print(f"Total clean files: {len(results['clean'])}")
+        results = extract_and_scan_zip(input_file, rule)
 
-        with open('yara_scan_results.json', 'w') as json_file:
+        with open(output_file, 'w') as json_file:
             json.dump(results, json_file, indent=4)
     else:
         print("No valid YARA rule to apply.")
@@ -65,3 +66,5 @@ def run_yara_scan():
 
 if __name__ == "__main__":
     run_yara_scan()
+
+

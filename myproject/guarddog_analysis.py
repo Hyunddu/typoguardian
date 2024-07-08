@@ -7,6 +7,12 @@ from tempfile import TemporaryDirectory
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+input_file = os.path.join(BASE_DIR, 'packages.zip')
+output_file = os.path.join(BASE_DIR, 'dog_result.json')
+
+
 def analyze_package(package_path):
     cmd = f"guarddog pypi scan {package_path} --output-format=json"
     try:
@@ -60,7 +66,7 @@ def process_package(package_file):
             })
     return package_info, is_malicious
 
-def process_zip_file(zip_file_path, output_file):
+def process_zip_file(zip_file_path, output_json):
     all_packages = []
     malicious_count = 0
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -85,12 +91,13 @@ def process_zip_file(zip_file_path, output_file):
         "summary": summary,
         "packages": all_packages
     }
-    with open(output_file, 'w') as f:
+    with open(output_json, 'w') as f:
         json.dump(final_result, f, indent=2)
-    #print(f"Saved {output_file}")
 
 def run_guarddog_analysis():
-    process_zip_file('packages.zip', 'dog_result.json')
+    process_zip_file(input_file, output_file)
 
 if __name__ == "__main__":
     run_guarddog_analysis()
+
+

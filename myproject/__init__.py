@@ -8,3 +8,4 @@ from .typos_result_download import run_typos_result_download
 from .sbom_analysis import run_sbom_analysis
 from .guarddog_analysis import run_guarddog_analysis
 from .output import run_output
+from .typos_checker import run_typos_check

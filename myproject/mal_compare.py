@@ -3,6 +3,10 @@ import tarfile
 import zipfile
 import json
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+input_file = os.path.join(BASE_DIR, 'similar_packages')
+output_file = os.path.join(BASE_DIR, 'comparison_results.json')
 
 def get_file_list_from_tar(archive_path):
     try:
@@ -30,7 +34,7 @@ def compare_files(normal_files, malicious_tar_path):
 
 
 def run_mal_compare():
-    base_dir = 'similar_packages'
+    base_dir = input_file
     results = {}
 
     for normal_package_name in os.listdir(os.path.join(base_dir)):
@@ -82,11 +86,10 @@ def run_mal_compare():
                 reverse=True
             )
 
-    with open('comparison_results.json', 'w', encoding='utf-8') as json_file:
+    with open(output_file, 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
-
-    #print("\nSaved: comparison_results.json")
-
 
 if __name__ == "__main__":
     run_mal_compare()
+
+

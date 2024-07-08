@@ -1,11 +1,16 @@
 #https://github.com/MaxHalford/clavier
 #pip install git+https://github.com/MaxHalford/clavier
 import json
+import os
 from clavier import load_qwerty
 
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+output_file = os.path.join(BASE_DIR, 'typos_clavier.json')
+input_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 
 def run_clavier():
-    with open('typos_DLD.json', 'r') as file:
+    with open(input_file, 'r') as file:
         data = json.load(file)
 
     keyboard = load_qwerty()
@@ -25,5 +30,7 @@ def run_clavier():
 
         data[pkg] = processed_typos
 
-    with open('typos_clavier.json', 'w') as file:
+    with open(output_file, 'w') as file:
         json.dump(data, file, indent=4)
+
+

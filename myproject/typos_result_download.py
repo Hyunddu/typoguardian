@@ -6,9 +6,13 @@ import re
 import shutil
 from tqdm import tqdm
 
-SAVE_DIR = "similar_packages"
-PYPI_ZIP_DIR = "pypi_zip"
-SIMILAR_JSON_FILE = "final_typos.json"
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+
+SAVE_DIR =  os.path.join(BASE_DIR, 'similar_packages')
+SIMILAR_JSON_FILE = os.path.join(BASE_DIR, 'final_typos.json')
+ZIP_PATH = os.path.join(BASE_DIR, 'packages.zip')
+PYPI_ZIP_DIR = os.path.join(BASE_DIR, 'pypi_zip')
 
 def get_github_url(package_info):
     project_urls = package_info["info"]["project_urls"]
@@ -117,20 +121,16 @@ def load_similar_packages(json_file):
         return json.load(file)
 
 def run_typos_result_download():
-    json_file_path = 'final_typos.json'
-    base_save_path = 'pypi_zip'
-    zip_path = 'packages.zip'
-
-    with open(json_file_path, 'r') as file:
+    with open(SIMILAR_JSON_FILE, 'r') as file:
         data = json.load(file)
 
     for norm_pkg_name in tqdm(data.keys(), desc="Download packages file"):
-        process_package(norm_pkg_name, base_save_path)
+        process_package(norm_pkg_name, PYPI_ZIP_DIR)
         for package_info in data[norm_pkg_name]:
             package_name, score = package_info
             if score >= 3.0:
-                process_package(package_name, base_save_path)
-    compress_to_zip(base_save_path, zip_path)
+                process_package(package_name, PYPI_ZIP_DIR)
+    compress_to_zip(PYPI_ZIP_DIR, ZIP_PATH)
 
     similar_packages = load_similar_packages(SIMILAR_JSON_FILE)
     for norm_pkg_name, mal_pkg_list in similar_packages.items():
@@ -142,4 +142,6 @@ def run_typos_result_download():
 
 if __name__ == '__main__':
     run_typos_result_download()
+
+
 
