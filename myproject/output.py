@@ -73,7 +73,7 @@ def get_sbom_malicious_ids(typo_name, sbom_result, max_ids=10):
 def get_dog_results(typo_name, dog_result, max_issues=3):
     issues = []
     for package in dog_result['packages']:
-        if package['package'].startswith(typo_name):
+        if exact_package_match(typo_name, package['package']):
             for issue in package['issues']:
                 issues.append({
                     "location": issue['location'],
