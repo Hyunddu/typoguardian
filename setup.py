@@ -16,7 +16,7 @@ def install_syft_bomber():
 install_syft_bomber()
 
 setup(
-    name='myproject',
+    name='typoguardian',
     version='0.1',
     packages=find_packages(),
     install_requires=[
@@ -40,7 +40,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'myproject=myproject.main:main',
+            'typoguardian=typoguardian.main:main',
         ],
     },
     classifiers=[

@@ -6,14 +6,15 @@ current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 output_file = os.path.join(BASE_DIR, 'results.json')
 
+
 def exact_package_match(typo_name, string):
     pattern = rf"^{re.escape(typo_name)}(?:-\d|\.|$)"
     return re.search(pattern, string) is not None
 
 
-def calculate_score(package_name, typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result):
+def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result):
     score = typo_score
-
+    score_breakdown = [f"typos: {typo_score:.2f}"]
     dog_detected = any(typo_name == issue['package']
                        for package in dog_result.get('packages', [])
                        for issue in package.get('issues', []))
@@ -26,20 +27,27 @@ def calculate_score(package_name, typo_name, typo_score, dog_result, yara_scan_r
     sbom_detected = any(exact_package_match(typo_name, item['파일명'])
                         and '악성 이유' in item
                         for item in sbom_result['성공한 파일들'])
-
     if dog_detected:
         score += 3
+        score_breakdown.append("dog: +3")
     if yara_detected:
         score += 1
+        score_breakdown.append("yara: +1")
     if compare_detected:
         score += 1.5
+        score_breakdown.append("compare: +1.5")
     if sbom_detected:
         score += 2
+        score_breakdown.append("sbom: +2")
     if yara_detected and dog_detected:
         score += 1
+        score_breakdown.append("yara+dog bonus: +1")
 
     final_score = min(score, 10)
-    return final_score
+    if final_score < score:
+        score_breakdown.append(f"(capped at 10)")
+
+    return final_score, " + ".join(score_breakdown)
 
 
 def get_danger_level(score):
@@ -100,6 +108,7 @@ def is_in_comparison_results(typo_name, comparison_result):
                     return True
     return False
 
+
 def get_result_description(typo_name, dog_result, sbom_result, comparison_result):
     result = {"dog_results": [], "sbom_ids": [], "comparison_result": None}
 
@@ -120,7 +129,8 @@ def get_result_description(typo_name, dog_result, sbom_result, comparison_result
 
     return result
 
-def run_output(typoschecker):
+
+def run_output():
     with open(os.path.join(BASE_DIR, 'final_typos.json'), 'r') as f:
         final_typos = json.load(f)
     with open(os.path.join(BASE_DIR, 'dog_result.json'), 'r') as f:
@@ -136,27 +146,27 @@ def run_output(typoschecker):
         for typo in typos:
             typo_name, typo_score = typo
             if typo_score >= 3.0:
-                score = calculate_score(package_name, typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result)
+                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result)
                 danger = get_danger_level(score)
                 result = get_result_description(typo_name, dog_result, sbom_result, comparison_result)
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
-                if result["comparison_result"]:
-                    result_message += f" {result['comparison_result']}."
-                combined_result = f"result: {result_message}, dog_results: {result.get('dog_results', [])}, sbom_ids: {result.get('sbom_ids', [])}"
                 typo_result.append({
                     "name": typo_name,
                     "score": score,
+                    "score_breakdown": score_breakdown,
                     "danger": danger,
-                    "result": combined_result 
+                    "result": {
+                        "message": result_message,
+                        "dog_results": result.get("dog_results", []),
+                        "sbom_ids": result.get("sbom_ids", []),
+                    }
                 })
     typo_result.sort(key=lambda x: x['score'], reverse=True)
 
     final_result = {
         "typoResult": typo_result,
-        "recommand": f"pip install {typoschecker}"
+        # "recommand": f"pip install {typoschecker}"
     }
 
-    # with open('/home/ubuntu/whs/util/results.json', 'w', encoding='utf-8') as json_file:
-    #     json.dump(final_result, json_file, ensure_ascii=False)
-    json_str = json.dumps(final_result, ensure_ascii=False)
-    print(json_str)
+    with open('results.json', 'w', encoding='utf-8') as json_file:
+        json.dump(final_result, json_file, ensure_ascii=False, indent=4)

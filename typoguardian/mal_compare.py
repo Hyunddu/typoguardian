@@ -8,6 +8,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 input_file = os.path.join(BASE_DIR, 'similar_packages')
 output_file = os.path.join(BASE_DIR, 'comparison_results.json')
 
+
 def get_file_list_from_tar(archive_path):
     try:
         with tarfile.open(archive_path, 'r:*') as tar:
@@ -89,7 +90,6 @@ def run_mal_compare():
     with open(output_file, 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
 
+
 if __name__ == "__main__":
     run_mal_compare()
-
-

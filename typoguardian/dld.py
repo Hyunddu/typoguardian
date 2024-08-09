@@ -1,0 +1,126 @@
+import json
+import os
+import re
+import sys
+import requests
+from tqdm import tqdm
+import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pyxdameraulevenshtein import damerau_levenshtein_distance
+
+
+current_script_path = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
+output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
+popular_packages_file = os.path.join(BASE_DIR, 'popular_packages.json')
+rss_list_dir = os.path.join(BASE_DIR, 'rss_list')
+
+URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json"
+
+
+def get_latest_update_list_file():
+    files = [f for f in os.listdir(rss_list_dir) if os.path.isfile(os.path.join(rss_list_dir, f))]
+    json_files = [f for f in files if re.match(r'pypi_update_list\d+\.json', f)]
+    json_files.sort(key=lambda x: int(re.search(r'\d+', x).group()), reverse=True)
+    return os.path.join(rss_list_dir, json_files[0]) if json_files else None
+
+
+def preprocess_package(package):
+    package = re.sub(r'[<=>!@~`].*', '', package)
+    return package.lower().replace('_', '-')
+
+
+def update_popular_packages():
+    try:
+        response = requests.get(URL_POPULAR_PACKAGES)
+        if response.status_code == 200:
+            popular_packages = [pkg['project'] for pkg in response.json()['rows']]
+            with open(popular_packages_file, 'w') as file:
+                json.dump(popular_packages, file)
+            print("Data updated in popular_packages.json")
+        else:
+            print(f"Error fetching popular packages list: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
+def load_popular_packages():
+    try:
+        with open(popular_packages_file, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        print("Popular packages file not found. Please run the script with --update flag to download the file.")
+        return []
+
+
+def load_update_list(json_file):
+    try:
+        with open(json_file, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        print(f"{json_file} not found.")
+        return []
+
+
+def process_package(package_args):
+    package, comparison_packages, threshold = package_args
+    try:
+        matching_packages = []
+        for comparison_package in comparison_packages:
+            if package != comparison_package:
+                distance = damerau_levenshtein_distance(package, comparison_package)
+                max_len = max(len(package), len(comparison_package))
+                similarity = 1 - (distance / max_len)
+                if similarity > threshold:
+                    matching_packages.append((comparison_package, similarity))
+        return package, matching_packages
+    except Exception as e:
+        print(f"An error occurred while processing {package}: {str(e)}")
+    return None
+
+
+def save_results(results):
+    with open(output_file, 'w') as file:
+        json.dump(results, file, indent=4)
+
+
+def run_dld(update=False, threshold=0.7):
+    if update:
+        update_popular_packages()
+
+    popular_packages = load_popular_packages()
+    if not popular_packages:
+        sys.exit("Error: PyPI package names list is empty. Please run the script with --update flag to download the file.")
+
+    update_list_file = get_latest_update_list_file()
+    if not update_list_file:
+        sys.exit("Error: No update list JSON files found in rss_list directory.")
+    update_list = load_update_list(update_list_file)
+
+    filtered_update_list = [pkg for pkg in update_list if pkg not in popular_packages]
+    filtered_update_list = [preprocess_package(pkg) for pkg in filtered_update_list]
+
+    results = {}
+
+    with ThreadPoolExecutor(max_workers=mp.cpu_count()) as executor:
+        package_args = [(pkg, filtered_update_list, threshold) for pkg in popular_packages]
+        futures = {executor.submit(process_package, arg): arg[0] for arg in package_args}
+
+        pbar = tqdm(total=len(popular_packages), desc="Checking packages", unit="package")
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                if result:
+                    package, matching_packages = result
+                    if matching_packages:
+                        results[package] = matching_packages
+            except Exception as e:
+                print(f"An error occurred while processing: {e}")
+
+            pbar.update(1)
+
+        pbar.close()
+
+    if results:
+        save_results(results)
+        print("Saved: typos_DLD.json")
