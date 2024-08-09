@@ -3,6 +3,7 @@ import json
 import re
 import os
 import datetime
+import sys
 
 current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
@@ -51,6 +52,7 @@ def get_rss_list():
         print(f"새 패키지가 추가된 파일로 저장되었습니다: {output_file}")
     else:
         print("추가된 새 패키지가 없습니다.")
+        sys.exit()
 
     updated_package_list = list(set(existing_packages + newly_added_packages))
 

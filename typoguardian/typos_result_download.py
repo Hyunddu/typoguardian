@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+
 import requests
 import zipfile
 import re
@@ -144,6 +146,10 @@ def run_typos_result_download():
                 norm_pkg_to_download = True
         if norm_pkg_to_download:
             packages_to_download.add(norm_pkg_name)
+
+    if not packages_to_download:
+        print("타이포스쿼팅 의심패키지 없음.")
+        sys.exit()
 
     with tqdm(total=len(packages_to_download), desc="Download packages file") as pbar:
         for package_name in packages_to_download:

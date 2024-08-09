@@ -19,6 +19,8 @@ URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-pack
 
 
 def get_latest_update_list_file():
+    if not os.path.exists(rss_list_dir):
+        os.makedirs(rss_list_dir)
     files = [f for f in os.listdir(rss_list_dir) if os.path.isfile(os.path.join(rss_list_dir, f))]
     json_files = [f for f in files if re.match(r'pypi_update_list\d+\.json', f)]
     json_files.sort(key=lambda x: int(re.search(r'\d+', x).group()), reverse=True)
@@ -120,7 +122,9 @@ def run_dld(update=False, threshold=0.7):
             pbar.update(1)
 
         pbar.close()
+    if not results:
+        print("임계값 0.7이상인 패키지가 없습니다.")
+        sys.exit()
 
-    if results:
-        save_results(results)
-        print("Saved: typos_DLD.json")
+    save_results(results)
+    print("Saved: typos_DLD.json")
