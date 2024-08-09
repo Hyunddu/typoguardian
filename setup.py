@@ -36,7 +36,8 @@ setup(
         'yara-python',
         'cyclonedx-python-lib',
         'setuptools',
-        'wheel'
+        'wheel',
+        'feedparser'
     ],
     entry_points={
         'console_scripts': [
