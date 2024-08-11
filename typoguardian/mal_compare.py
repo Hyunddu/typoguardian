@@ -7,6 +7,7 @@ current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 input_file = os.path.join(BASE_DIR, 'similar_packages')
 output_file = os.path.join(BASE_DIR, 'comparison_results.json')
+POP_SAVE_DIR = os.path.join(BASE_DIR, 'pop_save')
 
 
 def get_file_list_from_tar(archive_path):
@@ -39,7 +40,7 @@ def run_mal_compare():
     results = {}
 
     for normal_package_name in os.listdir(os.path.join(base_dir)):
-        normal_package_dir = os.path.join(base_dir, normal_package_name, 'normal')
+        normal_package_dir = os.path.join(POP_SAVE_DIR, normal_package_name)
         if os.path.isdir(normal_package_dir):
             for normal_version in os.listdir(normal_package_dir):
                 normal_version_dir = os.path.join(normal_package_dir, normal_version)

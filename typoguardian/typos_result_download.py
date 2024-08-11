@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-
 import requests
 import zipfile
 import re
@@ -12,6 +11,7 @@ current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 
 SAVE_DIR = os.path.join(BASE_DIR, 'similar_packages')
+POP_SAVE_DIR = os.path.join(BASE_DIR, 'pop_save')
 SIMILAR_JSON_FILE = os.path.join(BASE_DIR, 'final_typos.json')
 ZIP_PATH = os.path.join(BASE_DIR, 'packages.zip')
 PYPI_ZIP_DIR = os.path.join(BASE_DIR, 'pypi_zip')
@@ -120,7 +120,10 @@ def restructure_dir(package_name, package_type='normal'):
             for item in os.listdir(source_path):
                 s = os.path.join(source_path, item)
                 d = os.path.join(target_path, item)
-                shutil.move(s, d)
+                if os.path.isdir(s):
+                    shutil.copytree(s, d, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(s, d)
 
             if not os.listdir(source_path):
                 os.rmdir(source_path)
@@ -153,10 +156,25 @@ def run_typos_result_download():
 
     with tqdm(total=len(packages_to_download), desc="Download packages file") as pbar:
         for package_name in packages_to_download:
-            if package_name not in downloaded_packages:
-                process_package(package_name, PYPI_ZIP_DIR)
-                downloaded_packages.add(package_name)
+            if package_name in downloaded_packages:
                 pbar.update(1)
+                continue
+
+            # 인기 패키지 처리
+            if package_name in data.keys():  # norm_pkg_name인 경우
+                version = get_package_version(package_name)
+                if version:
+                    pop_save_path = os.path.join(POP_SAVE_DIR, package_name, version, f"{package_name}-{version}.tar.gz")
+                    if not os.path.exists(pop_save_path):
+                        process_package(package_name, POP_SAVE_DIR)
+                    else:
+                        print(f"{package_name}-{version} is already in pop_save, skipping download.")
+                    downloaded_packages.add(package_name)
+                    continue
+
+            process_package(package_name, PYPI_ZIP_DIR)
+            downloaded_packages.add(package_name)
+            pbar.update(1)
 
     compress_to_zip(PYPI_ZIP_DIR, ZIP_PATH)
 

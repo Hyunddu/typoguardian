@@ -9,6 +9,7 @@ from typoguardian.typos_result_download import run_typos_result_download
 from typoguardian.sbom_analysis import run_sbom_analysis
 from typoguardian.guarddog_analysis import run_guarddog_analysis
 from typoguardian.output import run_output
+from typoguardian.save_results import archive_high_score_packages
 import json
 import argparse
 import os
@@ -161,6 +162,7 @@ def main():
         future_yara_scan = executor.submit(run_yara_scan)
         concurrent.futures.wait([future_sbom, future_mal_compare, future_yara_scan, future_guarddog], return_when=concurrent.futures.ALL_COMPLETED)
     run_output()
+    archive_high_score_packages()
 
 
 if __name__ == "__main__":

@@ -30,7 +30,6 @@ setup(
         'pyxdameraulevenshtein',
         'clavier @ git+https://github.com/MaxHalford/clavier',
         'Pillow',
-        'pipdeptree',
         'numpy',
         'jarowinkler',
         'yara-python',
