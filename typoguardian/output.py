@@ -168,5 +168,5 @@ def run_output():
         # "recommand": f"pip install {typoschecker}"
     }
 
-    with open('results.json', 'w', encoding='utf-8') as json_file:
+    with open(output_file, 'w', encoding='utf-8') as json_file:
         json.dump(final_result, json_file, ensure_ascii=False, indent=4)
