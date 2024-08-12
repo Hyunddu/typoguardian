@@ -11,7 +11,7 @@ def install_syft_bomber():
     os.system('tar -xzf bomber_0.4.8_linux_amd64.tar.gz')
     os.system('sudo mv bomber /usr/local/bin/')
     os.system('sudo chmod +x /usr/local/bin/bomber')
-    os.system('pip install guarddog')
+    os.system('sudo pip install guarddog')
 
 install_syft_bomber()
 
