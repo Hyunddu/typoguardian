@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 popular_packages_file = os.path.join(BASE_DIR, 'popular_packages.json')
 rss_list_dir = os.path.join(BASE_DIR, 'rss_list')
-
+#update_list_file = os.path.join(BASE_DIR, 'rss_list/pypi_update_list240814143001.json')
 URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json"
 
 
@@ -86,7 +86,7 @@ def save_results(results):
         json.dump(results, file, indent=4)
 
 
-def run_dld(update=False, threshold=0.7):
+def run_dld(update=False, threshold=0.6):
     if update:
         update_popular_packages()
 

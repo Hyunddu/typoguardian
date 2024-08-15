@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 results_file = os.path.join(BASE_DIR, 'results.json')
 archived_results_dir = os.path.join(BASE_DIR, 'archived_results')
 archived_json_file = os.path.join(archived_results_dir, 'archived_results.json')
-packages_dir = os.path.join(BASE_DIR, 'pypi_zip')  
+packages_dir = os.path.join(BASE_DIR, 'pypi_zip')
 
 
 os.makedirs(archived_results_dir, exist_ok=True)
@@ -31,7 +31,7 @@ def archive_high_score_packages():
         package_name = entry["name"]
         score = entry["score"]
 
-        if score >= 6.0:
+        if score >= 6:
             archived_data["typoResult"].append(entry)
             package_version_dir = os.path.join(packages_dir, package_name)
             if os.path.exists(package_version_dir):
@@ -42,7 +42,7 @@ def archive_high_score_packages():
                         os.makedirs(target_dir, exist_ok=True)
                         shutil.copy2(tar_file, target_dir)
                         print(f"Copied {tar_file} to {target_dir}")
-
+                        
     with open(archived_json_file, 'w', encoding='utf-8') as file:
         json.dump(archived_data, file, indent=4, ensure_ascii=False)
         print(f"Archived data saved to {archived_json_file}")

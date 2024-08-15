@@ -1,6 +1,9 @@
 import json
 import re
 import os
+from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
@@ -12,7 +15,7 @@ def exact_package_match(typo_name, string):
     return re.search(pattern, string) is not None
 
 
-def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result):
+def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info):
     score = typo_score
     score_breakdown = [f"typos: {typo_score:.2f}"]
     dog_detected = any(typo_name == issue['package']
@@ -27,6 +30,7 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
     sbom_detected = any(exact_package_match(typo_name, item['파일명'])
                         and '악성 이유' in item
                         for item in sbom_result['성공한 파일들'])
+
     if dog_detected:
         score += 3
         score_breakdown.append("dog: +3")
@@ -42,7 +46,26 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
     if yara_detected and dog_detected:
         score += 1
         score_breakdown.append("yara+dog bonus: +1")
-
+    if uploader_info:
+        uploader_count, package_count, join_within_3_months = uploader_info
+        if uploader_count > 1:
+            score -= 1
+            score_breakdown.append("uploaders>2: -1")
+        elif uploader_count == 1:
+            if package_count > 0:
+                score += 1 / package_count
+                score_breakdown.append(f"pkg_count({package_count}): +{1 / package_count:.2f}")
+            if join_within_3_months:
+                score += 0.5
+                score_breakdown.append("join date: +0.5")    
+        if uploader_count == 1 and package_count >= 2:
+            if join_within_3_months is False:
+                if 'join_date' in locals() and join_date:
+                    join_date_threshold = (datetime.now() - join_date).days > 365
+                    if join_date_threshold:
+                        score -= 2
+                        score_breakdown.append("uploaders with multiple projects and joined over 1 year ago: -2")
+            
     final_score = min(score, 10)
     if final_score < score:
         score_breakdown.append(f"(capped at 10)")
@@ -130,6 +153,43 @@ def get_result_description(typo_name, dog_result, sbom_result, comparison_result
     return result
 
 
+def fetch_uploader_info(package_name):
+    url = f"https://pypi.org/project/{package_name}/"
+    response = requests.get(url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        uploader_tags = soup.select('a[href^="/user/"]')
+
+        uploaders = {tag.text.strip() for tag in uploader_tags}
+        uploader_count = len(uploaders)
+
+        if uploader_count == 1:
+            uploader_name = list(uploaders)[0]
+            uploader_profile_url = f"https://pypi.org/user/{uploader_name}/"
+            profile_response = requests.get(uploader_profile_url)
+            if profile_response.status_code == 200:
+                profile_soup = BeautifulSoup(profile_response.text, 'html.parser')
+
+                # 정확한 가입일자 찾기
+                profile_info = profile_soup.find('div', class_='author-profile__info')
+                if profile_info:
+                    time_tag = profile_info.find('time')
+                    if time_tag:
+                        join_date_str = time_tag.text.strip()
+                        join_date = datetime.strptime(join_date_str, "%b %d, %Y")
+                        current_date = datetime.now()
+                        join_within_3_months = (current_date - join_date).days <= 90
+
+                        # 업로더의 프로젝트 수 계산
+                        project_tags = profile_soup.find_all('a', {"href": lambda href: href and href.startswith("/project/")})
+                        project_count = len(project_tags)
+
+                        return uploader_count, project_count, join_within_3_months
+
+        return uploader_count, 0, False
+    return None
+
+
 def run_output():
     with open(os.path.join(BASE_DIR, 'final_typos.json'), 'r') as f:
         final_typos = json.load(f)
@@ -146,7 +206,8 @@ def run_output():
         for typo in typos:
             typo_name, typo_score = typo
             if typo_score >= 3.0:
-                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result)
+                uploader_info = fetch_uploader_info(typo_name)
+                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info)
                 danger = get_danger_level(score)
                 result = get_result_description(typo_name, dog_result, sbom_result, comparison_result)
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
@@ -165,8 +226,8 @@ def run_output():
 
     final_result = {
         "typoResult": typo_result,
-        # "recommand": f"pip install {typoschecker}"
     }
 
     with open(output_file, 'w', encoding='utf-8') as json_file:
         json.dump(final_result, json_file, ensure_ascii=False, indent=4)
+

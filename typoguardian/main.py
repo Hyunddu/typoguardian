@@ -132,7 +132,7 @@ def main():
     parser = argparse.ArgumentParser(description="Typosquatting Detection Tool")
     parser.add_argument("--update", action="store_true", help="Update the PyPI package list")
     parser.add_argument("--clean", action="store_true", help="Clean up downloaded files and folders after execution")
-    parser.add_argument("--threshold", type=float, default=0.7, help="Similarity threshold for detection")
+    parser.add_argument("--threshold", type=float, default=0.6, help="Similarity threshold for detection")
     args = parser.parse_args()
 
     if args.clean:

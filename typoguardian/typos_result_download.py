@@ -31,7 +31,7 @@ def get_github_release_url(github_url):
     owner, repo = match.groups()
     releases_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
     headers = {
-        #'Authorization' : 'git token'
+        # 'Authorization' : 'git token',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     try:
