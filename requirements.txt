@@ -18,3 +18,4 @@ clavier~=0.1.0
 setuptools~=70.3.0
 typoguardian~=0.1
 feedparser~=6.0.11
+beautifulsoup4~=4.12.3

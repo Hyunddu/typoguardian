@@ -36,7 +36,8 @@ setup(
         'cyclonedx-python-lib',
         'setuptools',
         'wheel',
-        'feedparser'
+        'feedparser',
+        'beautifulsoup4'
     ],
     entry_points={
         'console_scripts': [
