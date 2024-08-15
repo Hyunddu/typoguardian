@@ -159,18 +159,14 @@ def fetch_uploader_info(package_name):
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         uploader_tags = soup.select('a[href^="/user/"]')
-
         uploaders = {tag.text.strip() for tag in uploader_tags}
         uploader_count = len(uploaders)
-
         if uploader_count == 1:
             uploader_name = list(uploaders)[0]
             uploader_profile_url = f"https://pypi.org/user/{uploader_name}/"
             profile_response = requests.get(uploader_profile_url)
             if profile_response.status_code == 200:
                 profile_soup = BeautifulSoup(profile_response.text, 'html.parser')
-
-                # 정확한 가입일자 찾기
                 profile_info = profile_soup.find('div', class_='author-profile__info')
                 if profile_info:
                     time_tag = profile_info.find('time')
@@ -179,13 +175,9 @@ def fetch_uploader_info(package_name):
                         join_date = datetime.strptime(join_date_str, "%b %d, %Y")
                         current_date = datetime.now()
                         join_within_3_months = (current_date - join_date).days <= 90
-
-                        # 업로더의 프로젝트 수 계산
                         project_tags = profile_soup.find_all('a', {"href": lambda href: href and href.startswith("/project/")})
                         project_count = len(project_tags)
-
                         return uploader_count, project_count, join_within_3_months
-
         return uploader_count, 0, False
     return None
 
