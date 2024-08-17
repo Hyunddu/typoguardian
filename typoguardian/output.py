@@ -47,10 +47,10 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
         score += 1
         score_breakdown.append("yara+dog bonus: +1")
     if uploader_info:
-        uploader_count, package_count, join_within_3_months = uploader_info
+        uploader_count, package_count, join_within_3_months, join_date = uploader_info
         if uploader_count > 1:
-            score -= 1
-            score_breakdown.append("uploaders>2: -1")
+            score -= 2
+            score_breakdown.append("uploaders>1: -2")
         elif uploader_count == 1:
             if package_count > 0:
                 score += 1 / package_count
@@ -59,12 +59,11 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
                 score += 0.5
                 score_breakdown.append("join date: +0.5")    
         if uploader_count == 1 and package_count >= 2:
-            if join_within_3_months is False:
-                if 'join_date' in locals() and join_date:
-                    join_date_threshold = (datetime.now() - join_date).days > 365
-                    if join_date_threshold:
-                        score -= 2
-                        score_breakdown.append("uploaders with multiple projects and joined over 1 year ago: -2")
+            if join_within_3_months is False and join_date:
+                if (datetime.now() - join_date).days > 365:
+                    score -= 2
+                    score_breakdown.append("old uploaders : -2")
+
             
     final_score = min(score, 10)
     if final_score < score:
@@ -159,8 +158,11 @@ def fetch_uploader_info(package_name):
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         uploader_tags = soup.select('a[href^="/user/"]')
+
         uploaders = {tag.text.strip() for tag in uploader_tags}
         uploader_count = len(uploaders)
+        join_date = None
+
         if uploader_count == 1:
             uploader_name = list(uploaders)[0]
             uploader_profile_url = f"https://pypi.org/user/{uploader_name}/"
@@ -177,8 +179,10 @@ def fetch_uploader_info(package_name):
                         join_within_3_months = (current_date - join_date).days <= 90
                         project_tags = profile_soup.find_all('a', {"href": lambda href: href and href.startswith("/project/")})
                         project_count = len(project_tags)
-                        return uploader_count, project_count, join_within_3_months
-        return uploader_count, 0, False
+
+                        return uploader_count, project_count, join_within_3_months, join_date
+
+        return uploader_count, 0, False, join_date
     return None
 
 
