@@ -160,8 +160,7 @@ def run_typos_result_download():
                 pbar.update(1)
                 continue
 
-            # 인기 패키지 처리
-            if package_name in data.keys():  # norm_pkg_name인 경우
+            if package_name in data.keys():
                 version = get_package_version(package_name)
                 if version:
                     pop_save_path = os.path.join(POP_SAVE_DIR, package_name, version, f"{package_name}-{version}.tar.gz")

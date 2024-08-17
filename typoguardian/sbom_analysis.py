@@ -13,9 +13,8 @@ output_file = os.path.join(BASE_DIR, 'sbom_results.json')
 extract_path = os.path.join(BASE_DIR, 'packages')
 bomber_path = '/usr/local/bin/bomber'
 
-def run_sbom_analysis():
 
-    
+def run_sbom_analysis():
     if not zipfile.is_zipfile(input_file):
         raise ValueError("업로드된 파일이 zip 형식이 아닙니다.")
 
@@ -117,7 +116,7 @@ def run_sbom_analysis():
 
     with ThreadPoolExecutor() as executor:
         futures = {executor.submit(analyze_file, os.path.join(root, file)): file for root, dirs, files in os.walk(package_path) for file in files if file.endswith(".tar.gz")}
-        
+
         for future in tqdm(as_completed(futures), total=len(futures), desc="Analyzing SBOM"):
             file = futures[future]
             try:
@@ -145,13 +144,11 @@ def run_sbom_analysis():
     }
 
     output_json = json.dumps(output, ensure_ascii=False, indent=4)
-    
+
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(output_json)
     #print("Saved sbom_results.json")
 
+
 if __name__ == '__main__':
     run_sbom_analysis()
-
-
-

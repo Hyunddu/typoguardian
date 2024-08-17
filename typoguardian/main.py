@@ -10,6 +10,8 @@ from typoguardian.sbom_analysis import run_sbom_analysis
 from typoguardian.guarddog_analysis import run_guarddog_analysis
 from typoguardian.output import run_output
 from typoguardian.save_results import archive_high_score_packages
+from typoguardian.combine_scores import combine_scores
+from typoguardian.filter_json import filter_scores
 import json
 import argparse
 import os
@@ -37,97 +39,6 @@ def clean_existing_data():
             print(f"Path not found: {full_path}")
 
 
-def combine_scores():
-    try:
-        file_path = os.path.join(BASE_DIR, 'typos_DLD.json')
-        with open(file_path, 'r') as file:
-            dld_data = json.load(file)
-    except FileNotFoundError:
-        print("typos_DLD.json not found.")
-        return
-
-    try:
-        file_path = os.path.join(BASE_DIR, 'typos_image_numpy.json')
-        with open(file_path, 'r') as file:
-            image_data = json.load(file)
-    except FileNotFoundError:
-        print("typos_image_numpy.json not found.")
-        return
-
-    try:
-        file_path = os.path.join(BASE_DIR, 'typos_clavier.json')
-        with open(file_path, 'r') as file:
-            clavier_data = json.load(file)
-    except FileNotFoundError:
-        print("typos_clavier.json not found.")
-        return
-
-    try:
-        file_path = os.path.join(BASE_DIR, 'typos_jaro.json')
-        with open(file_path, 'r') as file:
-            jaro_data = json.load(file)
-    except FileNotFoundError:
-        print("typos_jaro.json not found.")
-        return
-
-    combined_results = {}
-
-    for package in dld_data:
-        combined_results[package] = {}
-        for typo, dld_score in dld_data[package]:
-            combined_results[package][typo] = dld_score
-            if dld_score < 0.75:
-                penalty = -0.3
-            else:
-                penalty = 0
-            if dld_score >= 0.83:
-                bonus = 0.2
-            elif dld_score >= 0.8:
-                bonus = 0.1
-            else:
-                bonus = 0
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += penalty + bonus
-            else:
-                combined_results[package][typo] = penalty + bonus
-
-    for package in image_data:
-        for typo, image_score in image_data[package]:
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += 1.5 * image_score
-
-    for package in jaro_data:
-        for typo, jaro_score in jaro_data[package]:
-            if jaro_score >= 0.9:
-                bonus = 0.3
-            elif jaro_score >= 0.85:
-                bonus = 0.2
-            else:
-                bonus = 0
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += jaro_score + bonus
-
-    for package in clavier_data:
-        for typo, clavier_score in clavier_data[package]:
-            if clavier_score < 2:
-                bonus = 0.5
-            else:
-                bonus = 0
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += bonus
-            else:
-                combined_results[package][typo] = bonus
-
-    final_results = {}
-    for package in combined_results:
-        final_results[package] = sorted(combined_results[package].items(), key=lambda x: x[1], reverse=True)
-
-    with open(output_file, 'w') as file:
-        json.dump(final_results, file, indent=4)
-
-    print("Saved: final_typos.json")
-
-
 def main():
     parser = argparse.ArgumentParser(description="Typosquatting Detection Tool")
     parser.add_argument("--update", action="store_true", help="Update the PyPI package list")
@@ -153,6 +64,7 @@ def main():
         concurrent.futures.wait([future_jaro, future_clavier, future_img_numpy], return_when=concurrent.futures.ALL_COMPLETED)
 
     combine_scores()
+    filter_scores()
     run_typos_result_download()
 
     with concurrent.futures.ThreadPoolExecutor() as executor:

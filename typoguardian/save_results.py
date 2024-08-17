@@ -8,7 +8,6 @@ archived_results_dir = os.path.join(BASE_DIR, 'archived_results')
 archived_json_file = os.path.join(archived_results_dir, 'archived_results.json')
 packages_dir = os.path.join(BASE_DIR, 'pypi_zip')
 
-
 os.makedirs(archived_results_dir, exist_ok=True)
 
 
@@ -16,7 +15,6 @@ def archive_high_score_packages():
     if not os.path.exists(results_file):
         print(f"{results_file} not found.")
         return
-
 
     if os.path.exists(archived_json_file):
         with open(archived_json_file, 'r', encoding='utf-8') as file:
@@ -42,7 +40,7 @@ def archive_high_score_packages():
                         os.makedirs(target_dir, exist_ok=True)
                         shutil.copy2(tar_file, target_dir)
                         print(f"Copied {tar_file} to {target_dir}")
-                        
+
     with open(archived_json_file, 'w', encoding='utf-8') as file:
         json.dump(archived_data, file, indent=4, ensure_ascii=False)
         print(f"Archived data saved to {archived_json_file}")

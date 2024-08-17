@@ -57,14 +57,13 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
                 score_breakdown.append(f"pkg_count({package_count}): +{1 / package_count:.2f}")
             if join_within_3_months:
                 score += 0.5
-                score_breakdown.append("join date: +0.5")    
+                score_breakdown.append("join date: +0.5")
         if uploader_count == 1 and package_count >= 2:
             if join_within_3_months is False and join_date:
                 if (datetime.now() - join_date).days > 365:
                     score -= 2
                     score_breakdown.append("old uploaders : -2")
 
-            
     final_score = min(score, 10)
     if final_score < score:
         score_breakdown.append(f"(capped at 10)")
@@ -226,4 +225,3 @@ def run_output():
 
     with open(output_file, 'w', encoding='utf-8') as json_file:
         json.dump(final_result, json_file, ensure_ascii=False, indent=4)
-
