@@ -12,7 +12,6 @@ from typoguardian.output import run_output
 from typoguardian.save_results import archive_high_score_packages
 from typoguardian.combine_scores import combine_scores
 from typoguardian.filter_json import filter_scores
-import json
 import argparse
 import os
 import shutil

@@ -14,7 +14,7 @@ output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 popular_packages_file = os.path.join(BASE_DIR, 'popular_packages.json')
 rss_list_dir = os.path.join(BASE_DIR, 'rss_list')
 URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json"
-#update_list_file = os.path.join(BASE_DIR, 'rss_list/pypi_update_list240817181004.json')
+#update_list_file = os.path.join(BASE_DIR, 'rss_list/pypi_update_list.json')
 
 
 def get_latest_update_list_file():
@@ -63,6 +63,18 @@ def load_update_list(json_file):
         return []
 
 
+def check_hyphen_swapped(package, comparison_package, threshold):
+    parts = comparison_package.split('-')
+    if len(parts) == 2:
+        swapped_package = f"{parts[1]}-{parts[0]}"
+        distance = damerau_levenshtein_distance(package, swapped_package)
+        max_len = max(len(package), len(swapped_package))
+        similarity = 1 - (distance / max_len)
+        if similarity > threshold:
+            return swapped_package, similarity, True
+    return None
+
+
 def process_package(package_args):
     package, comparison_packages, threshold = package_args
     try:
@@ -73,7 +85,10 @@ def process_package(package_args):
                 max_len = max(len(package), len(comparison_package))
                 similarity = 1 - (distance / max_len)
                 if similarity > threshold:
-                    matching_packages.append((comparison_package, similarity))
+                    matching_packages.append((comparison_package, similarity, False))
+                swapped_result = check_hyphen_swapped(package, comparison_package, threshold)
+                if swapped_result:
+                    matching_packages.append(swapped_result)
         return package, matching_packages
     except Exception as e:
         print(f"An error occurred while processing {package}: {str(e)}")
@@ -121,9 +136,11 @@ def run_dld(update=False, threshold=0.6):
             pbar.update(1)
 
         pbar.close()
+
     if not results:
         print("임계값 0.7이상인 패키지가 없습니다.")
         sys.exit()
 
     save_results(results)
     print("Saved: typos_DLD.json")
+

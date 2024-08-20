@@ -21,7 +21,7 @@ def run_clavier():
 
     for pkg, typos_list in data.items():
         processed_typos = []
-        for typos, original_score in typos_list:
+        for typos, original_score, swapped in typos_list:
             if len(pkg) == len(typos):
                 keyboard_score = calculate_keyboard_distance(pkg, typos)
                 processed_typos.append([typos, keyboard_score])

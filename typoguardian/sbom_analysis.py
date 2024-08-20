@@ -85,7 +85,6 @@ def run_sbom_analysis():
             try:
                 bomber_output_file = file_path + "-bomber-output.json"
                 scan_command = f"{bomber_path} scan --output=json {formatted_sbom_file} > {bomber_output_file}"
-                # Suppress output by redirecting to /dev/null
                 with open(os.devnull, 'w') as devnull:
                     subprocess.run(scan_command, shell=True, stdout=devnull, stderr=devnull, check=True)
 
@@ -147,7 +146,6 @@ def run_sbom_analysis():
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(output_json)
-    #print("Saved sbom_results.json")
 
 
 if __name__ == '__main__':

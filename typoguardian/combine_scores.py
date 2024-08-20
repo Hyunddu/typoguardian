@@ -4,12 +4,12 @@ import os
 current_script_path = os.path.abspath(__file__)
 BASE_DIR = os.path.dirname(os.path.dirname(current_script_path))
 output_file = os.path.join(BASE_DIR, 'final_typos.json')
+typos_dld_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 
 
 def combine_scores():
     try:
-        file_path = os.path.join(BASE_DIR, 'typos_DLD.json')
-        with open(file_path, 'r') as file:
+        with open(typos_dld_file, 'r') as file:
             dld_data = json.load(file)
     except FileNotFoundError:
         print("typos_DLD.json not found.")
@@ -43,7 +43,7 @@ def combine_scores():
 
     for package in dld_data:
         combined_results[package] = {}
-        for typo, dld_score in dld_data[package]:
+        for typo, dld_score, swapped in dld_data[package]:
             combined_results[package][typo] = dld_score
             if dld_score < 0.75:
                 penalty = -0.3
@@ -89,9 +89,16 @@ def combine_scores():
 
     final_results = {}
     for package in combined_results:
-        final_results[package] = sorted(combined_results[package].items(), key=lambda x: x[1], reverse=True)
+        final_results[package] = []
+        for typo, score in sorted(combined_results[package].items(), key=lambda x: x[1], reverse=True):
+            if any([typo == original and swapped for original, _, swapped in dld_data[package]]):
+                parts = typo.split('-')
+                if len(parts) == 2:
+                    typo = f"{parts[1]}-{parts[0]}"
+            final_results[package].append([typo, score])
 
     with open(output_file, 'w') as file:
         json.dump(final_results, file, indent=4)
 
     print("Saved: final_typos.json")
+
