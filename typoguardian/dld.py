@@ -14,7 +14,7 @@ output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 popular_packages_file = os.path.join(BASE_DIR, 'popular_packages.json')
 rss_list_dir = os.path.join(BASE_DIR, 'rss_list')
 URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json"
-update_list_file = os.path.join(BASE_DIR, 'rss_list/mal.json')
+#update_list_file = os.path.join(BASE_DIR, 'rss_list/mal.json')
 
 
 def get_latest_update_list_file():
@@ -120,7 +120,7 @@ def run_dld(update=False, threshold=0.6):
     if not popular_packages:
         sys.exit("Error: PyPI package names list is empty. Please run the script with --update flag to download the file.")
 
-    #update_list_file = get_latest_update_list_file()
+    update_list_file = get_latest_update_list_file()
     if not update_list_file:
         sys.exit("Error: No update list JSON files found in rss_list directory.")
     update_list = load_update_list(update_list_file)
