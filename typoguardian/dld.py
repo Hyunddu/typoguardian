@@ -14,7 +14,7 @@ output_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 popular_packages_file = os.path.join(BASE_DIR, 'popular_packages.json')
 rss_list_dir = os.path.join(BASE_DIR, 'rss_list')
 URL_POPULAR_PACKAGES = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json"
-#update_list_file = os.path.join(BASE_DIR, 'rss_list/pypi_update_list.json')
+update_list_file = os.path.join(BASE_DIR, 'rss_list/mal.json')
 
 
 def get_latest_update_list_file():
@@ -78,17 +78,19 @@ def check_hyphen_swapped(package, comparison_package, threshold):
 def process_package(package_args):
     package, comparison_packages, threshold = package_args
     try:
-        matching_packages = []
+        matching_packages = {}
         for comparison_package in comparison_packages:
             if package != comparison_package:
                 distance = damerau_levenshtein_distance(package, comparison_package)
                 max_len = max(len(package), len(comparison_package))
                 similarity = 1 - (distance / max_len)
-                if similarity > threshold:
-                    matching_packages.append((comparison_package, similarity, False))
+                if similarity > threshold and (comparison_package not in matching_packages or matching_packages[comparison_package][0] < similarity):
+                    matching_packages[comparison_package] = (similarity, False)
                 swapped_result = check_hyphen_swapped(package, comparison_package, threshold)
                 if swapped_result:
-                    matching_packages.append(swapped_result)
+                    swapped_package, swapped_similarity, _ = swapped_result
+                    if swapped_package not in matching_packages or matching_packages[swapped_package][0] < swapped_similarity:
+                        matching_packages[swapped_package] = (swapped_similarity, True)
         return package, matching_packages
     except Exception as e:
         print(f"An error occurred while processing {package}: {str(e)}")
@@ -96,8 +98,18 @@ def process_package(package_args):
 
 
 def save_results(results):
+    filtered_results = {}
+    for package, matches in results.items():
+        filtered_results[package] = []
+        seen_typos = set()
+        for comparison_package, (score, swapped) in matches.items():
+            if comparison_package not in seen_typos:
+                filtered_results[package].append([comparison_package, score, swapped])
+                seen_typos.add(comparison_package)
+            else:
+                print(f"Duplicate found and skipped: {comparison_package} in {package}")
     with open(output_file, 'w') as file:
-        json.dump(results, file, indent=4)
+        json.dump(filtered_results, file, indent=4)
 
 
 def run_dld(update=False, threshold=0.6):
@@ -108,7 +120,7 @@ def run_dld(update=False, threshold=0.6):
     if not popular_packages:
         sys.exit("Error: PyPI package names list is empty. Please run the script with --update flag to download the file.")
 
-    update_list_file = get_latest_update_list_file()
+    #update_list_file = get_latest_update_list_file()
     if not update_list_file:
         sys.exit("Error: No update list JSON files found in rss_list directory.")
     update_list = load_update_list(update_list_file)
@@ -138,7 +150,7 @@ def run_dld(update=False, threshold=0.6):
         pbar.close()
 
     if not results:
-        print("임계값 0.7이상인 패키지가 없습니다.")
+        print("임계값 0.6이상인 패키지가 없습니다.")
         sys.exit()
 
     save_results(results)

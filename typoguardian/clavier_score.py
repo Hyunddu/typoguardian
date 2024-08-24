@@ -9,8 +9,15 @@ input_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 
 
 def run_clavier():
-    with open(input_file, 'r') as file:
-        data = json.load(file)
+    try:
+        with open(input_file, 'r') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        return
+    except json.JSONDecodeError:
+        return
+    except Exception:
+        return
 
     keyboard = load_qwerty()
 
@@ -23,11 +30,17 @@ def run_clavier():
         processed_typos = []
         for typos, original_score, swapped in typos_list:
             if len(pkg) == len(typos):
-                keyboard_score = calculate_keyboard_distance(pkg, typos)
-                processed_typos.append([typos, keyboard_score])
+                try:
+                    keyboard_score = calculate_keyboard_distance(pkg, typos)
+                    processed_typos.append([typos, keyboard_score])
+                except Exception:
+                    continue
         processed_typos.sort(key=lambda x: (x[1] is not None, x[1]))
 
         data[pkg] = processed_typos
 
-    with open(output_file, 'w') as file:
-        json.dump(data, file, indent=4)
+    try:
+        with open(output_file, 'w') as file:
+            json.dump(data, file, indent=4)
+    except Exception:
+        pass

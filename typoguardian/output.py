@@ -56,7 +56,7 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
                 score += 1 / package_count
                 score_breakdown.append(f"pkg_count({package_count}): +{1 / package_count:.2f}")
             if join_within_3_months:
-                score += 0.5
+                score += 1
                 score_breakdown.append("join date: +0.5")
         if uploader_count == 1 and package_count >= 2:
             if join_within_3_months is False and join_date:
