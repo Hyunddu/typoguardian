@@ -15,9 +15,9 @@ def exact_package_match(typo_name, string):
     return re.search(pattern, string) is not None
 
 
-def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info):
+def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name):
     score = typo_score
-    score_breakdown = [f"typos: {typo_score:.2f}"]
+    score_breakdown = [f"typos: [{typo_score:.2f}]"]
     dog_detected = any(typo_name == issue['package']
                        for package in dog_result.get('packages', [])
                        for issue in package.get('issues', []))
@@ -31,38 +31,61 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
                         and '악성 이유' in item
                         for item in sbom_result['성공한 파일들'])
 
+    if 3.5 <= score < 4.0:
+        score += 0.5
+        score_breakdown.append("typos bonus(>3.5): [+0.5]")
+    elif score >= 4.0:
+        score += 1.0
+        score_breakdown.append("typos bonus(>4.0): [+1]")
     if dog_detected:
         score += 3
-        score_breakdown.append("dog: +3")
+        score_breakdown.append("dog: [+3]")
     if yara_detected:
         score += 1
-        score_breakdown.append("yara: +1")
+        score_breakdown.append("yara: [+1]")
     if compare_detected:
-        score += 1.5
-        score_breakdown.append("compare: +1.5")
+        score += 2
+        score_breakdown.append("compare: [+2]")
     if sbom_detected:
         score += 2
-        score_breakdown.append("sbom: +2")
+        score_breakdown.append("sbom: [+2]")
     if yara_detected and dog_detected:
         score += 1
-        score_breakdown.append("yara+dog bonus: +1")
+        score_breakdown.append("yara+dog bonus: [+1]")
+
+    if github_info:
+        github_url, github_name = github_info
+        if github_url:
+            if github_name == package_name:
+                score += 2
+                score_breakdown.append("git_url steal: [+2]")
+            elif github_name == typo_name:
+                score -= 0.5
+                score_breakdown.append("git_url match: [-0.5]")
+            else:
+                score += 1
+                score_breakdown.append("git_url mismatch: [+1]")
+        else:
+            score += 0.5
+            score_breakdown.append("no git_url: [+0.5]")
+
     if uploader_info:
         uploader_count, package_count, join_within_3_months, join_date = uploader_info
         if uploader_count > 1:
-            score -= 2
-            score_breakdown.append("uploaders>1: -2")
+            score -= 1
+            score_breakdown.append("uploaders>1: [-1]")
         elif uploader_count == 1:
             if package_count > 0:
                 score += 1 / package_count
-                score_breakdown.append(f"pkg_count({package_count}): +{1 / package_count:.2f}")
+                score_breakdown.append(f"pkg_count({package_count}): [+{1 / package_count:.2f}]")
             if join_within_3_months:
                 score += 1
-                score_breakdown.append("join date: +0.5")
+                score_breakdown.append("join date: [+1]")
         if uploader_count == 1 and package_count >= 2:
-            if join_within_3_months is False and join_date:
+            if not join_within_3_months and join_date:
                 if (datetime.now() - join_date).days > 365:
                     score -= 2
-                    score_breakdown.append("old uploaders : -2")
+                    score_breakdown.append("old uploaders : [-2]")
 
     final_score = min(score, 10)
     if final_score < score:
@@ -103,7 +126,7 @@ def get_dog_results(typo_name, dog_result, max_issues=3):
     issues = []
     for package in dog_result['packages']:
         if exact_package_match(typo_name, package['package']):
-            for issue in package['issues']:
+            for issue in package.get('issues', []):
                 issues.append({
                     "location": issue['location'],
                     "code": issue['code'],
@@ -153,6 +176,8 @@ def get_result_description(typo_name, dog_result, sbom_result, comparison_result
 
 def fetch_uploader_info(package_name):
     url = f"https://pypi.org/project/{package_name}/"
+    json_url = f"https://pypi.org/pypi/{package_name}/json"
+    json_response = requests.get(json_url)
     response = requests.get(url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -161,6 +186,8 @@ def fetch_uploader_info(package_name):
         uploaders = {tag.text.strip() for tag in uploader_tags}
         uploader_count = len(uploaders)
         join_date = None
+        github_url = None
+        github_name = None
 
         if uploader_count == 1:
             uploader_name = list(uploaders)[0]
@@ -179,10 +206,22 @@ def fetch_uploader_info(package_name):
                         project_tags = profile_soup.find_all('a', {"href": lambda href: href and href.startswith("/project/")})
                         project_count = len(project_tags)
 
-                        return uploader_count, project_count, join_within_3_months, join_date
+                        if json_response.status_code == 200:
+                            data = json_response.json()
+                            project_urls = data['info'].get('project_urls', {})
+                            if project_urls:
+                                for name, url in project_urls.items():
+                                    if "github.com" in url:
+                                        github_url = url
+                                        match = re.search(r'github\.com/([^/]+)/([^/]+)', github_url)
+                                        if match:
+                                            github_name = match.group(2)
+                                        break
 
-        return uploader_count, 0, False, join_date
-    return None
+                        return (uploader_count, project_count, join_within_3_months, join_date), (github_url, github_name)
+
+        return (uploader_count, 0, False, join_date), None
+    return None, None
 
 
 def run_output():
@@ -201,8 +240,8 @@ def run_output():
         for typo in typos:
             typo_name, typo_score = typo
             if typo_score >= 3.0:
-                uploader_info = fetch_uploader_info(typo_name)
-                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info)
+                uploader_info, github_info = fetch_uploader_info(typo_name)
+                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name)
                 danger = get_danger_level(score)
                 result = get_result_description(typo_name, dog_result, sbom_result, comparison_result)
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
