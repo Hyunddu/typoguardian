@@ -13,7 +13,7 @@ def get_pypi_owners(package_name):
     response = requests.get(url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
-        owner_tags = soup.select('a[href^="/user/"]')
+        owner_tags = soup.select('span.sidebar-section__user-gravatar-text')
         owners = [tag.text.strip() for tag in owner_tags]
         return set(owners)
     return []
