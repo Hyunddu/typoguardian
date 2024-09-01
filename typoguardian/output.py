@@ -15,7 +15,7 @@ def exact_package_match(typo_name, string):
     return re.search(pattern, string) is not None
 
 
-def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name):
+def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name, package_github_url):
     score = typo_score
     score_breakdown = [f"typos: [{typo_score:.2f}]"]
     dog_detected = any(typo_name == issue['package']
@@ -32,7 +32,7 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
                         for item in sbom_result['성공한 파일들'])
 
     if 3.5 <= score < 4.0:
-        score += 0.5
+        score += 0.3
         score_breakdown.append("typos bonus(>3.5): [+0.5]")
     elif score >= 4.0:
         score += 1.0
@@ -56,15 +56,19 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
     if github_info:
         github_url, github_name = github_info
         if github_url:
-            if github_name == package_name:
+            github_name_lower = github_name.lower()
+            typo_name_lower = typo_name.lower()
+            package_github_url_lower = package_github_url.lower() if package_github_url else None
+
+            if package_github_url_lower and github_url.lower() == package_github_url_lower:
                 score += 2
                 score_breakdown.append("git_url steal: [+2]")
-            elif github_name == typo_name:
-                score -= 0.5
-                score_breakdown.append("git_url match: [-0.5]")
+            elif github_name_lower == typo_name_lower:
+                score -= 1
+                score_breakdown.append("git_url match: [-1]")
             else:
-                score += 1
-                score_breakdown.append("git_url mismatch: [+1]")
+                score += 0.5
+                score_breakdown.append("git_url mismatch: [+0.5]")
         else:
             score += 0.5
             score_breakdown.append("no git_url: [+0.5]")
@@ -174,20 +178,50 @@ def get_result_description(typo_name, dog_result, sbom_result, comparison_result
     return result
 
 
+def fetch_package_github_url(package_name):
+    json_url = f"https://pypi.org/pypi/{package_name}/json"
+    json_response = requests.get(json_url)
+
+    if json_response.status_code == 200:
+        data = json_response.json()
+        project_urls = data['info'].get('project_urls', {})
+        if project_urls:
+            for url in project_urls.values():
+                if "github.com" in url:
+                    return url
+    return None
+
+
 def fetch_uploader_info(package_name):
     url = f"https://pypi.org/project/{package_name}/"
     json_url = f"https://pypi.org/pypi/{package_name}/json"
-    json_response = requests.get(json_url)
     response = requests.get(url)
+    json_response = requests.get(json_url)
+
+    uploader_count = 0
+    join_date = None
+    github_url = None
+    github_name = None
+    project_count = None
+    join_within_3_months = None
+
+    if json_response.status_code == 200:
+        data = json_response.json()
+        project_urls = data['info'].get('project_urls', {})
+        if project_urls:
+            for url in project_urls.values():
+                if "github.com" in url:
+                    github_url = url
+                    match = re.search(r'github\.com/([^/]+)/([^/]+)', github_url)
+                    if match:
+                        github_name = match.group(2)
+                    break
+
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         uploader_tags = soup.select('a[href^="/user/"]')
-
         uploaders = {tag.text.strip() for tag in uploader_tags}
         uploader_count = len(uploaders)
-        join_date = None
-        github_url = None
-        github_name = None
 
         if uploader_count == 1:
             uploader_name = list(uploaders)[0]
@@ -205,23 +239,11 @@ def fetch_uploader_info(package_name):
                         join_within_3_months = (current_date - join_date).days <= 90
                         project_tags = profile_soup.find_all('a', {"href": lambda href: href and href.startswith("/project/")})
                         project_count = len(project_tags)
+                    else:
+                        join_within_3_months = False
+                        project_count = 0
+    return (uploader_count, project_count, join_within_3_months, join_date), (github_url, github_name)
 
-                        if json_response.status_code == 200:
-                            data = json_response.json()
-                            project_urls = data['info'].get('project_urls', {})
-                            if project_urls:
-                                for name, url in project_urls.items():
-                                    if "github.com" in url:
-                                        github_url = url
-                                        match = re.search(r'github\.com/([^/]+)/([^/]+)', github_url)
-                                        if match:
-                                            github_name = match.group(2)
-                                        break
-
-                        return (uploader_count, project_count, join_within_3_months, join_date), (github_url, github_name)
-
-        return (uploader_count, 0, False, join_date), None
-    return None, None
 
 
 def run_output():
@@ -240,8 +262,9 @@ def run_output():
         for typo in typos:
             typo_name, typo_score = typo
             if typo_score >= 3.0:
+                package_github_url = fetch_package_github_url(package_name)
                 uploader_info, github_info = fetch_uploader_info(typo_name)
-                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name)
+                score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name, package_github_url)
                 danger = get_danger_level(score)
                 result = get_result_description(typo_name, dog_result, sbom_result, comparison_result)
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
