@@ -33,7 +33,7 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
 
     if 3.5 <= score < 4.0:
         score += 0.3
-        score_breakdown.append("typos bonus(>3.5): [+0.5]")
+        score_breakdown.append("typos bonus(>3.5): [+0.3]")
     elif score >= 4.0:
         score += 1.0
         score_breakdown.append("typos bonus(>4.0): [+1]")
@@ -56,7 +56,7 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
     if github_info:
         github_url, github_name = github_info
         if github_url:
-            github_name_lower = github_name.lower()
+            github_name_lower = github_name.lower() if github_name else ""
             typo_name_lower = typo_name.lower()
             package_github_url_lower = package_github_url.lower() if package_github_url else None
 
