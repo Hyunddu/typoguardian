@@ -73,7 +73,7 @@ def run_mal_compare():
                                                     common_files_count = compare_files(normal_filenames, malicious_tar_path)
                                                     rate = common_files_count / normal_file_count
 
-                                                    if rate > 0.4 and common_files_count >= 10:
+                                                    if rate > 0.4 and common_files_count >= 12:
                                                         if normal_package_name not in results:
                                                             results[normal_package_name] = {"file_count": normal_file_count, "versions": {}}
                                                         if normal_version not in results[normal_package_name]["versions"]:
