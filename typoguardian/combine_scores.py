@@ -7,6 +7,15 @@ output_file = os.path.join(BASE_DIR, 'final_typos.json')
 typos_dld_file = os.path.join(BASE_DIR, 'typos_DLD.json')
 
 
+def calculate_length_penalty(package_name, typo_name):
+    length_diff = abs(len(package_name) - len(typo_name))
+    if length_diff <= 1:
+        return 0.3
+    elif length_diff >= 3:
+        return -0.1 * (length_diff - 2)
+    return 0
+
+
 def combine_scores():
     try:
         with open(typos_dld_file, 'r') as file:
@@ -45,43 +54,28 @@ def combine_scores():
         combined_results[package] = {}
         for typo, dld_score, swapped in dld_data[package]:
             combined_results[package][typo] = dld_score
-            if dld_score < 0.75:
-                penalty = -0.3
-            else:
-                penalty = 0
-            if dld_score >= 0.83:
-                bonus = 0.2
-            elif dld_score >= 0.8:
-                bonus = 0.1
-            else:
-                bonus = 0
-            if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += penalty + bonus
-            else:
-                combined_results[package][typo] = penalty + bonus
+
+            penalty = -0.3 if dld_score < 0.75 else 0
+            bonus = 0.2 if dld_score >= 0.83 else (0.1 if dld_score >= 0.8 else 0)
+
+            length_adjustment = calculate_length_penalty(package, typo)
+
+            combined_results[package][typo] += penalty + bonus + length_adjustment
 
     for package in image_data:
         for typo, image_score in image_data[package]:
             if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += 1.5 * image_score
+                combined_results[package][typo] += 1.1 * image_score
 
     for package in jaro_data:
         for typo, jaro_score in jaro_data[package]:
-            if jaro_score >= 0.9:
-                bonus = 0.3
-            elif jaro_score >= 0.85:
-                bonus = 0.2
-            else:
-                bonus = 0
+            bonus = 0.3 if jaro_score >= 0.9 else (0.2 if jaro_score >= 0.85 else 0)
             if package in combined_results and typo in combined_results[package]:
-                combined_results[package][typo] += jaro_score + bonus
+                combined_results[package][typo] += jaro_score * 1.1 + bonus
 
     for package in clavier_data:
         for typo, clavier_score in clavier_data[package]:
-            if clavier_score < 2:
-                bonus = 0.5
-            else:
-                bonus = 0
+            bonus = 0.5 if clavier_score < 2 else 0
             if package in combined_results and typo in combined_results[package]:
                 combined_results[package][typo] += bonus
             else:
@@ -101,4 +95,3 @@ def combine_scores():
         json.dump(final_results, file, indent=4)
 
     print("Saved: final_typos.json")
-
