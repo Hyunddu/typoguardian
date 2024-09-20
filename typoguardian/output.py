@@ -185,10 +185,24 @@ def fetch_package_github_url(package_name):
     if json_response.status_code == 200:
         data = json_response.json()
         project_urls = data['info'].get('project_urls', {})
-        if project_urls:
-            for url in project_urls.values():
-                if "github.com" in url:
-                    return url
+
+        if 'Source' in project_urls:
+            source_url = project_urls['Source']
+            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', source_url)
+            if match:
+                return source_url
+
+        if 'Homepage' in project_urls:
+            homepage_url = project_urls['Homepage']
+            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
+            if match:
+                return homepage_url
+
+        for url in project_urls.values():
+            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
+            if match:
+                return url
+
     return None
 
 
@@ -208,13 +222,26 @@ def fetch_uploader_info(package_name):
     if json_response.status_code == 200:
         data = json_response.json()
         project_urls = data['info'].get('project_urls', {})
-        if project_urls:
+
+        if 'Source' in project_urls:
+            github_url = project_urls['Source']
+            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', github_url)
+            if match:
+                github_name = match.group(2)
+
+        if not github_url and 'Homepage' in project_urls:
+            homepage_url = project_urls['Homepage']
+            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
+            if match:
+                github_url = homepage_url
+                github_name = match.group(2)
+
+        if not github_url:
             for url in project_urls.values():
-                if "github.com" in url:
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
+                if match:
                     github_url = url
-                    match = re.search(r'github\.com/([^/]+)/([^/]+)', github_url)
-                    if match:
-                        github_name = match.group(2)
+                    github_name = match.group(2)
                     break
 
     if response.status_code == 200:
