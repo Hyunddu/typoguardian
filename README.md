@@ -43,4 +43,4 @@ typoguardian --clean
 - yara 악성코드 탐지 결과 (output => yara_scan_results.json)
 - sboom 취약점 탐지 결과 (output => sbom_results.json)
 - gaurddog 악성코드 탐지결과 (output => dog_result.json)
-- 최종 악성패키지 점수 계산 (output => result.json)
+- 최종 악성패키지 점수 계산 (output => results.json)
