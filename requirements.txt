@@ -14,7 +14,6 @@ requests~=2.32.3
 tqdm~=4.66.4
 urllib3~=2.2.1
 yara-python~=4.5.1
-clavier~=0.1.0
 setuptools~=70.3.0
 typoguardian~=0.1
 feedparser~=6.0.11
