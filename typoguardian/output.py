@@ -56,11 +56,11 @@ def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, compari
     if github_info:
         github_url, github_name = github_info
         if github_url:
-            github_name_normalized = github_name.lower().replace('_', '-') if github_name else ""
+            github_name_normalized = github_name.lower().replace('_', '-').replace('.', '-') if github_name else ""
             typo_name_normalized = typo_name.lower().replace('_', '-')
-            package_github_url_normalized = package_github_url.lower().replace('_', '-') if package_github_url else None
+            package_github_url_normalized = package_github_url.lower() if package_github_url else None
 
-            if package_github_url_normalized and github_url.lower() == package_github_url_normalized:
+            if github_url.lower() == package_github_url_normalized:
                 score += 2
                 score_breakdown.append("git_url steal: [+2]")
             elif github_name_normalized == typo_name_normalized:
@@ -178,30 +178,41 @@ def get_result_description(typo_name, dog_result, sbom_result, comparison_result
     return result
 
 
+def fetch_pypi_url(package_name):
+    json_url = f"https://pypi.org/pypi/{package_name}/json"
+    json_response = requests.get(json_url)
+
+    if json_response.status_code == 200:
+        return f"https://pypi.org/project/{package_name}/"
+    else:
+        return "no pypi url"
+
+
 def fetch_package_github_url(package_name):
     json_url = f"https://pypi.org/pypi/{package_name}/json"
     json_response = requests.get(json_url)
 
     if json_response.status_code == 200:
         data = json_response.json()
-        project_urls = data['info'].get('project_urls', {})
+        project_urls = data['info'].get('project_urls')
 
-        if 'Source' in project_urls:
-            source_url = project_urls['Source']
-            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', source_url)
-            if match:
-                return source_url
+        if project_urls:
+            if 'Source' in project_urls:
+                source_url = project_urls['Source']
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', source_url)
+                if match:
+                    return source_url
 
-        if 'Homepage' in project_urls:
-            homepage_url = project_urls['Homepage']
-            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
-            if match:
-                return homepage_url
+            if 'Homepage' in project_urls:
+                homepage_url = project_urls['Homepage']
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
+                if match:
+                    return homepage_url
 
-        for url in project_urls.values():
-            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
-            if match:
-                return url
+            for url in project_urls.values():
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
+                if match:
+                    return url
 
     return None
 
@@ -223,26 +234,27 @@ def fetch_uploader_info(package_name):
         data = json_response.json()
         project_urls = data['info'].get('project_urls', {})
 
-        if 'Source' in project_urls:
-            github_url = project_urls['Source']
-            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', github_url)
-            if match:
-                github_name = match.group(2)
-
-        if not github_url and 'Homepage' in project_urls:
-            homepage_url = project_urls['Homepage']
-            match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
-            if match:
-                github_url = homepage_url
-                github_name = match.group(2)
-
-        if not github_url:
-            for url in project_urls.values():
-                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
+        if project_urls:
+            if 'Source' in project_urls:
+                github_url = project_urls['Source']
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', github_url)
                 if match:
-                    github_url = url
                     github_name = match.group(2)
-                    break
+
+            if not github_url and 'Homepage' in project_urls:
+                homepage_url = project_urls['Homepage']
+                match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', homepage_url)
+                if match:
+                    github_url = homepage_url
+                    github_name = match.group(2)
+
+            if not github_url:
+                for url in project_urls.values():
+                    match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', url)
+                    if match:
+                        github_url = url
+                        github_name = match.group(2)
+                        break
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -283,6 +295,7 @@ def run_output():
         comparison_result = json.load(f)
     with open(os.path.join(BASE_DIR, 'sbom_results.json'), 'r', encoding='utf-8') as file:
         sbom_result = json.load(file)
+
     typo_result = []
     for package_name, typos in final_typos.items():
         for typo in typos:
@@ -293,9 +306,11 @@ def run_output():
                 score, score_breakdown = calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name, package_github_url)
                 danger = get_danger_level(score)
                 result = get_result_description(typo_name, dog_result, sbom_result, comparison_result)
+                pypi_url = fetch_pypi_url(typo_name)
                 result_message = f"{package_name}의 타이포스쿼팅 패키지 의심."
                 typo_result.append({
                     "name": typo_name,
+                    "pypi_url": pypi_url,
                     "score": score,
                     "score_breakdown": score_breakdown,
                     "danger": danger,
