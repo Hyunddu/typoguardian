@@ -18,15 +18,17 @@ def exact_package_match(typo_name, string):
 def calculate_score(typo_name, typo_score, dog_result, yara_scan_result, comparison_result, sbom_result, uploader_info, github_info, package_name, package_github_url):
     score = typo_score
     score_breakdown = [f"typos: [{typo_score:.2f}]"]
+
     dog_detected = any(typo_name == issue['package']
                        for package in dog_result.get('packages', [])
                        for issue in package.get('issues', []))
     yara_detected = any(exact_package_match(typo_name, item['file_path'].split('/')[0])
                         for item in yara_scan_result['malicious'])
+
     compare_detected = any(typo_name == version_info.get('malicious_package', '')
-                           for package_info in comparison_result.values()
-                           for version_list in package_info.get('versions', {}).values()
-                           for version_info in version_list)
+                           for package_info in comparison_result.get(package_name, {}).get('versions', {}).values()
+                           for version_info in package_info)
+
     sbom_detected = any(exact_package_match(typo_name, item['파일명'])
                         and '악성 이유' in item
                         for item in sbom_result['성공한 파일들'])
